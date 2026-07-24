@@ -48,6 +48,7 @@ public sealed class TeamsController(
         return StatusCode(res.StatusCode, res);
     }
 
+
     [HttpGet("{teamId}/channels/{channelId}/messages/{messageId}/images/{imageId}")]
     public async Task<IActionResult> GetMessageImage(
         [FromRoute] string teamId,

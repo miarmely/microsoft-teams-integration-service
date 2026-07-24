@@ -37,18 +37,13 @@ app.Run();
     //////// Get All Messages of One Channel ////////
     -- http://localhost:5195/api/teams/1560909e-d5c6-4695-a367-853e9beae2ff/channels/19:z-xYxl8ZP388iVnmiFk9mKQHT48_bmLqIqZmhv1ubkM1@thread.tacv2/messages/50
 
-    //////// Get All Messages of One Channel ////////
-    -- http://localhost:5195/api/teams/1560909e-d5c6-4695-a367-853e9beae2ff/channels/19:z-xYxl8ZP388iVnmiFk9mKQHT48_bmLqIqZmhv1ubkM1@thread.tacv2/messages/1784816200501/images/aWQ9LHR5cGU9MSx1cmw9aHR0cHM6Ly9ldS1hcGkuYXNtLnNreXBlLmNvbS92MS9vYmplY3RzLzAtd2V1LWQyMC1jMzk3NDMxOWRkMjNmOTgyYmRiOTcyOGFlOGQwZmM2My92aWV3cy9pbWdv
+    //////// Get Image on the Image ////////
+    -- http://localhost:5195/api/teams/1560909e-d5c6-4695-a367-853e9beae2ff/channels/19:z-xYxl8ZP388iVnmiFk9mKQHT48_bmLqIqZmhv1ubkM1@thread.tacv2/messages/{MESSAGE_ID}/images/{IMAGE_ID}
 
-    {
-      "id": "1784810603358",
-      "content": "\u003Cp\u003E\u003Cimg alt=\"Medya\" src=\"https://graph.microsoft.com/v1.0/teams/1560909e-d5c6-4695-a367-853e9beae2ff/channels/19:z-xYxl8ZP388iVnmiFk9mKQHT48_bmLqIqZmhv1ubkM1@thread.tacv2/messages/1784810603358/hostedContents/aWQ9LHR5cGU9MSx1cmw9aHR0cHM6Ly9ldS1hcGkuYXNtLnNreXBlLmNvbS92MS9vYmplY3RzLzAtd2V1LWQxMy01NjBlYTdkYjI3MjNiNzBlNjJmODliYTFkODJlMDg0Zi92aWV3cy9pbWdv/$value\" width=\"2448\" height=\"3264\"\u003E\u003C/p\u003E\n\n\n\u003Cp\u003ENs4 reaktörü 2688 parti nolu Kor Pd Pcl3 üretimi 1 nci basamak onayı için labaratuvara numune verilmiştir \u003C/p\u003E",
-      "contentType": "Html",
-      "subject": "",
-      "senderDisplayName": "BNS Tesisi",
-      "createdDateTime": "2026-07-23T12:43:23.358+00:00",
-      "lastModifiedDateTime": "2026-07-23T12:43:24.087+00:00",
-      "webUrl": "https://teams.microsoft.com/l/message/19%3Az-xYxl8ZP388iVnmiFk9mKQHT48_bmLqIqZmhv1ubkM1%40thread.tacv2/1784810603358?groupId=1560909e-d5c6-4695-a367-853e9beae2ff&tenantId=5686d588-e212-4854-9c3b-1215742e2daf&createdTime=1784810603358&parentMessageId=1784810603358"
-    }
+    /// Tehlikeli Transfer Takip Grubu (GET ALL MESSAGES)
+    /// http://localhost:5195/api/teams/87d7804b-3c3e-493a-881e-d177834a3215/channels/19:lyQDSaFlPHZEEcdUTXPaqCAN_M8MVVngmyPDMGWCqy01@thread.tacv2/messages/50
+    
 
+    /// ISG SAHA Routine kontrol (GET ALL MESSAGES)
+    /// http://localhost:5195/api/teams/aa2e1aea-f1db-4e0d-8059-8a15aac0d859/channels/19:9wXjJCtxOOpr76HcsHYVu-ZkKFVGOjBw1LNcPrNg1Vc1@thread.tacv2/messages/50    
 */
