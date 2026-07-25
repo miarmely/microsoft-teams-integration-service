@@ -52,7 +52,6 @@ app.Run();
     /// Tehlikeli Transfer Takip Grubu (GET ALL MESSAGES)
     /// http://localhost:5195/api/teams/87d7804b-3c3e-493a-881e-d177834a3215/channels/19:lyQDSaFlPHZEEcdUTXPaqCAN_M8MVVngmyPDMGWCqy01@thread.tacv2/messages/50
     
-
     /// ISG SAHA Routine kontrol (GET ALL MESSAGES)
     /// http://localhost:5195/api/teams/aa2e1aea-f1db-4e0d-8059-8a15aac0d859/channels/19:9wXjJCtxOOpr76HcsHYVu-ZkKFVGOjBw1LNcPrNg1Vc1@thread.tacv2/messages/50    
 */

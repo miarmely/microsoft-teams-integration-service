@@ -75,15 +75,17 @@ public sealed class TeamsController(
     }
 
 
-    [HttpPost("{teamId}/channels/{channelId}/sync")]
+    [HttpPost("{teamId}/channels/{channelId}/sync/{dayFilter=30}")]
     public async Task<IActionResult> SynchronizeChannel(
-        string teamId,
-        string channelId,
+        [FromRoute] string teamId,
+        [FromRoute] string channelId,
+        [FromRoute] int dayFilter,
         CancellationToken cancellationToken)
     {
         var res = await teamsSyncService.SynchronizeChannelAsync(
             teamId,
             channelId,
+            dayFilter,
             cancellationToken);
 
         return StatusCode(res.StatusCode, res);

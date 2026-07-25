@@ -13,6 +13,7 @@ public sealed partial class TeamsSyncService(
     public async Task<ServiceResponse<ChannelSyncResponse>> SynchronizeChannelAsync(
         string teamId,
         string channelId,
+        int dayFilter = 30,
         CancellationToken cancellationToken = default)
     {
         try
@@ -31,7 +32,7 @@ public sealed partial class TeamsSyncService(
             var graphMessages = await teamsRepo.GetMessagesAsync(
                 teamId,
                 channelId,
-                50,
+                dayFilter,
                 cancellationToken);
 
             // synchorize messages
