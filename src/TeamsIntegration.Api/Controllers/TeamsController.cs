@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Graph.Models;
 using TeamsIntegration.Api.Services.Interfaces;
 
 namespace TeamsIntegration.Api.Controllers;
@@ -6,7 +7,8 @@ namespace TeamsIntegration.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 public sealed class TeamsController(
-    ITeamsService teamsService) : ControllerBase
+    ITeamsService teamsService,
+    ITeamsSyncService teamsSyncService) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetTeams(
@@ -70,5 +72,20 @@ public sealed class TeamsController(
         return File(
             res.Data!.Content,
             res.Data!.ContentType);
+    }
+
+
+    [HttpPost("{teamId}/channels/{channelId}/sync")]
+    public async Task<IActionResult> SynchronizeChannel(
+        string teamId,
+        string channelId,
+        CancellationToken cancellationToken)
+    {
+        var res = await teamsSyncService.SynchronizeChannelAsync(
+            teamId,
+            channelId,
+            cancellationToken);
+
+        return StatusCode(res.StatusCode, res);
     }
 }

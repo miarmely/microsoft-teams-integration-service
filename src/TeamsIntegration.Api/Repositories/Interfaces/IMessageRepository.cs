@@ -1,0 +1,45 @@
+using TeamsIntegration.Api.Entities;
+
+namespace TeamsIntegration.Api.Repositories.Interfaces;
+
+public interface IMessageRepository
+{
+    /// <summary>
+    /// Create message on db.
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task AddAsync(
+        TeamsMessage message,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get message on the channel which matched by id.
+    /// </summary>
+    /// <param name="teamId"></param>
+    /// <param name="channelId"></param>
+    /// <param name="graphMessageId"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<TeamsMessage?> GetByGraphIdAsync(
+        string teamId,
+        string channelId,
+        string graphMessageId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get messages on the channel.
+    /// </summary>
+    /// <param name="teamId"></param>
+    /// <param name="channelId"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<IEnumerable<TeamsMessage>> GetByChannelAsync(
+        string teamId,
+        string channelId,
+        CancellationToken cancellationToken = default);
+
+    Task SaveChangesAsync(
+        CancellationToken cancellationToken = default);
+}

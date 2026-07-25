@@ -3,17 +3,26 @@ using TeamsIntegration.Api.Extensions;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.AddOpenApi();
-builder.Services.AddMicrosoftGraph(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddPostgreSql(builder.Configuration);
+builder.Services.AddMicrosoftGraph(builder.Configuration);
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwagger();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI(opts =>
+    {
+        opts.SwaggerEndpoint(
+            "/swagger/v1/swagger.json",
+            "Teams Integration API v1");
+
+        opts.RoutePrefix = "swagger";
+    });
 }
 
 app.UseHttpsRedirection();
