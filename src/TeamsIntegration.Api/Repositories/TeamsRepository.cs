@@ -6,7 +6,8 @@ using TeamsIntegration.Api.Repositories.Interfaces;
 namespace TeamsIntegration.Api.Repositories;
 
 public class TeamsRepository(
-    GraphServiceClient graphClient) : ITeamsRepository
+    GraphServiceClient graphClient,
+    TimeProvider timeProvider) : ITeamsRepository
 {
     public async Task<IEnumerable<Team>> GetTeamsAsync(
         CancellationToken cancellationToken = default)
@@ -40,6 +41,9 @@ public class TeamsRepository(
         int dayFilter = 30,
         CancellationToken cancellationToken = default)
     {
+        var utcNow = timeProvider.GetUtcNow();
+        var fromDate = utcNow.AddDays(-dayFilter);
+
         var res = await graphClient
             .Teams[teamId]
             .Channels[channelId]
@@ -48,58 +52,14 @@ public class TeamsRepository(
                 reqCnfg =>
                 {
                     reqCnfg.QueryParameters.Top = 50; // 50 is max
+                    reqCnfg.QueryParameters.Filter = $"CreatedDateTime ge {fromDate:yyyy-MM-ddTHH:mm:ssZ} and CreatedDateTime le {utcNow:yyyy-MM-ddTHH:mm:ssZ}";
+                    reqCnfg.QueryParameters.Orderby = ["CreatedDateTime desc"];
                 },
                 cancellationToken);
 
-        var messages = new List<ChatMessage>();
-        DateTimeOffset? minCreatedDate = null;  // one month ago of "creation date of last message"
+        var messages = res?.Value ?? [];
 
-        while (res != null)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            // add messages of current page
-            if (res.Value != null)
-            {
-                var currentPageMessages = res.Value;
-
-                // initialize "minCreatedDate"
-                if (minCreatedDate == null)
-                {
-                    var lastMsg = currentPageMessages
-                        .Where(m => m.CreatedDateTime.HasValue)
-                        .OrderByDescending(m => m.CreatedDateTime)
-                        .First();
-
-                    if (!lastMsg.CreatedDateTime.HasValue) continue;
-
-                    minCreatedDate = lastMsg.CreatedDateTime.Value.AddDays(-dayFilter);
-                }
-
-                // get messages just equals or newer than "minCreatedDate"
-                var filteredMessages = currentPageMessages.Where(msg =>
-                    msg.CreatedDateTime.HasValue
-                    && msg.CreatedDateTime >= minCreatedDate.Value);
-
-                // if there are no messages which equals or newer then "minCreatedDate" (DO NOT FETCH NEXT PAGE) (BREAK THE LOOP EARLY)
-                if (filteredMessages.Count() == 0) break;
-
-                messages.AddRange(filteredMessages);
-            }
-
-            // if next "page link" not exists
-            if (string.IsNullOrWhiteSpace(res.OdataNextLink)) break;
-
-            // fetch messages of "next page"
-            res = await graphClient
-                .Teams[teamId]
-                .Channels[channelId]
-                .Messages
-                .WithUrl(res.OdataNextLink)
-                .GetAsync(cancellationToken: cancellationToken);
-        }
-
-        return messages.OrderByDescending(m => m.CreatedDateTime);
+        return messages;
     }
 
     public async Task<IEnumerable<ChatMessageHostedContent>> GetHostedContentsAsync(
@@ -153,3 +113,13 @@ public class TeamsRepository(
         };
     }
 }
+
+
+/*
+    var messages = await graphClient.Me.Messages
+        .GetAsync(config =>
+        {
+            config.QueryParameters.Filter = "receivedDateTime ge 2026-01-01T00:00:00Z and receivedDateTime le 2026-01-31T23:59:59Z";
+            config.QueryParameters.Orderby = new[] { "receivedDateTime desc" };
+        });
+*/
