@@ -15,7 +15,7 @@ public interface ITeamsService
     Task<ServiceResponse<IEnumerable<TeamsMessageResponse>>> GetMessagesAsync(
         string teamId,
         string channelId,
-        int messageCount,
+        int dayFilter,
         CancellationToken cancellationToken = default);
 
     Task<ServiceResponse<MediaContent?>> GetMessageImageAsync(

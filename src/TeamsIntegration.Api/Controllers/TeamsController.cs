@@ -34,17 +34,17 @@ public sealed class TeamsController(
     }
 
 
-    [HttpGet("{teamId}/channels/{channelId}/messages/{messageCount}")]
+    [HttpGet("{teamId}/channels/{channelId}/messages/{dayFilter}")]
     public async Task<IActionResult> GetMessages(
         [FromRoute] string teamId,
         [FromRoute] string channelId,
-        [FromRoute] int messageCount,
+        [FromRoute] int dayFilter,
         CancellationToken cancellationToken)
     {
         var res = await teamsService.GetMessagesAsync(
             teamId,
             channelId,
-            messageCount,
+            dayFilter,
             cancellationToken);
 
         return StatusCode(res.StatusCode, res);

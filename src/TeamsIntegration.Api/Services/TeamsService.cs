@@ -79,7 +79,7 @@ public sealed class TeamsService(
     public async Task<ServiceResponse<IEnumerable<TeamsMessageResponse>>> GetMessagesAsync(
         string teamId,
         string channelId,
-        int messageCount,
+        int dayFilter,
         CancellationToken cancellationToken)
     {
         try
@@ -87,7 +87,7 @@ public sealed class TeamsService(
             var messages = await teamsRepo.GetMessagesAsync(
                 teamId,
                 channelId,
-                messageCount,
+                dayFilter,
                 cancellationToken);
 
             var data = messages

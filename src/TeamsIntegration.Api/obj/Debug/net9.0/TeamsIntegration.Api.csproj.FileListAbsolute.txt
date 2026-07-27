@@ -162,3 +162,4 @@
 /Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/obj/Debug/net9.0/TeamsIntegration.Api.pdb
 /Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/obj/Debug/net9.0/TeamsIntegration.Api.genruntimeconfig.cache
 /Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/obj/Debug/net9.0/ref/TeamsIntegration.Api.dll
+/Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/obj/Debug/net9.0/TeamsIntegration.Api.sourcelink.json

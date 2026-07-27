@@ -52,8 +52,6 @@ public class TeamsRepository(
                 reqCnfg =>
                 {
                     reqCnfg.QueryParameters.Top = 50; // 50 is max
-                    reqCnfg.QueryParameters.Filter = $"CreatedDateTime ge {fromDate:yyyy-MM-ddTHH:mm:ssZ} and CreatedDateTime le {utcNow:yyyy-MM-ddTHH:mm:ssZ}";
-                    reqCnfg.QueryParameters.Orderby = ["CreatedDateTime desc"];
                 },
                 cancellationToken);
 
@@ -113,13 +111,3 @@ public class TeamsRepository(
         };
     }
 }
-
-
-/*
-    var messages = await graphClient.Me.Messages
-        .GetAsync(config =>
-        {
-            config.QueryParameters.Filter = "receivedDateTime ge 2026-01-01T00:00:00Z and receivedDateTime le 2026-01-31T23:59:59Z";
-            config.QueryParameters.Orderby = new[] { "receivedDateTime desc" };
-        });
-*/
