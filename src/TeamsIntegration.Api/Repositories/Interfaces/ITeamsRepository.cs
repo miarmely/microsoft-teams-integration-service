@@ -3,6 +3,9 @@ using TeamsIntegration.Api.Models.Dtos;
 
 namespace TeamsIntegration.Api.Repositories.Interfaces;
 
+/// <summary>
+/// It provides to fetch infos from Microsoft Teams via Microsoft Graph SDK. Example: "teams", "channels", "channel messages", "contents of channel messages"...
+/// </summary>
 public interface ITeamsRepository
 {
     Task<IEnumerable<Team>> GetTeamsAsync(

@@ -5,6 +5,18 @@ public record ServiceResponse
     public bool IsSuccess { get; init; }
     public int StatusCode { get; init; }
     public string? ErrorMessage { get; init; }
+
+    public static ServiceResponse CreateErrorResponse(
+        int statusCode,
+        string? errorMessage = null)
+    {
+        return new ServiceResponse
+        {
+            IsSuccess = false,
+            StatusCode = statusCode,
+            ErrorMessage = errorMessage
+        };
+    }
 }
 
 

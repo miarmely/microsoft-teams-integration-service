@@ -8,6 +8,7 @@ builder.Services.AddPostgreSql(builder.Configuration);
 builder.Services.AddMicrosoftGraph(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwagger();
+builder.Services.AddMinio(builder.Configuration);
 
 var app = builder.Build();
 
@@ -48,6 +49,8 @@ app.Run();
 
     //////// Get Image on the Image ////////
     -- http://localhost:5195/api/teams/1560909e-d5c6-4695-a367-853e9beae2ff/channels/19:z-xYxl8ZP388iVnmiFk9mKQHT48_bmLqIqZmhv1ubkM1@thread.tacv2/messages/{MESSAGE_ID}/images/{IMAGE_ID}
+
+
 
     /// Tehlikeli Transfer Takip Grubu (GET ALL MESSAGES)
     /// http://localhost:5195/api/teams/87d7804b-3c3e-493a-881e-d177834a3215/channels/19:lyQDSaFlPHZEEcdUTXPaqCAN_M8MVVngmyPDMGWCqy01@thread.tacv2/messages/50

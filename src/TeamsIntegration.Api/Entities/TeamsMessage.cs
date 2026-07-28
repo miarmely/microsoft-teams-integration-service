@@ -18,5 +18,5 @@ public sealed class TeamsMessage
     public string? WebUrl { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
-    public ICollection<MessageMedia> Media { get; set; } = [];
+    public ICollection<MessageMedia> Media { get; } = [];
 }

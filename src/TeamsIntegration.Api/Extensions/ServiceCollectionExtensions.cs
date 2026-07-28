@@ -12,12 +12,16 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<ITeamsRepository, TeamsRepository>();
         services.AddScoped<IMessageRepository, MessageRepository>();
+        services.AddScoped<IMessageMediaRepository, MessageMediaRepository>();
 
         services.AddScoped<ITeamsService, TeamsService>();
         services.AddScoped<ITeamsSyncService, TeamsSyncService>();
+        services.AddScoped<IObjectStorageService, MinioObjectStorageService>();
+        services.AddScoped<IMessageMediaSynchronizationService, MessageMediaSynchronizationService>();
 
         services.AddSingleton<IMessageMediaService, MessageMediaService>();
         services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IObjectNameFactoryService, ObjectNameFactoryService>();
 
         return services;
     }

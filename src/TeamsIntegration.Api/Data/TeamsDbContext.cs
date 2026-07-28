@@ -7,12 +7,12 @@ public sealed class TeamsDbContext(
     DbContextOptions<TeamsDbContext> options) : DbContext(options)
 {
     public DbSet<TeamsMessage> TeamsMessages => Set<TeamsMessage>();
-    public DbSet<MessageMedia> MessageMedia => Set<MessageMedia>();
+    public DbSet<MessageMedia> MessageMedias => Set<MessageMedia>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(TeamsDbContext).Assembly);
-
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(TeamsDbContext).Assembly);
     }
 }

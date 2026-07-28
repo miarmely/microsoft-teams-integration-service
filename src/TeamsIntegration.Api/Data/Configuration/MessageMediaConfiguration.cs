@@ -17,49 +17,34 @@ public sealed class MessageMediaConfiguration : IEntityTypeConfiguration<Message
 
         builder.Property(x => x.GraphHostedContentId)
             .HasColumnName("graph_hosted_content_id")
-            .HasMaxLength(512);
+            .HasMaxLength(500)
+            .IsRequired();
 
-        builder.Property(x => x.GraphAttachmentId)
-            .HasColumnName("graph_attachment_id")
-            .HasMaxLength(512);
-
-        builder.Property(x => x.MediaType)
-            .HasColumnName("media_type")
+        builder.Property(x => x.BucketName)
+            .HasColumnName("bucket_name")
             .HasMaxLength(100)
             .IsRequired();
 
-        builder.Property(x => x.FileName)
-            .HasColumnName("file_name")
-            .HasMaxLength(500)
+        builder.Property(x => x.ObjectName)
+            .HasColumnName("object_name")
+            .HasMaxLength(1500)
             .IsRequired();
 
         builder.Property(x => x.ContentType)
             .HasColumnName("content_type")
-            .HasMaxLength(255)
+            .HasMaxLength(150)
             .IsRequired();
 
-        builder.Property(x => x.FileExtension)
-            .HasColumnName("file_extension")
-            .HasMaxLength(50);
-
-        builder.Property(x => x.RelativePath)
-            .HasColumnName("relative_path")
-            .HasMaxLength(2000)
+        builder.Property(x => x.SizeBytes)
+            .HasColumnName("size_bytes")
             .IsRequired();
 
-        builder.Property(x => x.FileSize)
-            .HasColumnName("file_size");
+        builder.Property(x => x.ETag)
+            .HasColumnName("e_tag")
+            .HasMaxLength(200);
 
-        builder.Property(x => x.Checksum)
-            .HasColumnName("checksum")
-            .HasMaxLength(128);
-
-        builder.Property(x => x.CreatedAt)
-            .HasColumnName("created_at")
-            .IsRequired();
-
-        builder.Property(x => x.UpdatedAt)
-            .HasColumnName("updated_at")
+        builder.Property(x => x.UploadedAt)
+            .HasColumnName("uploaded_at")
             .IsRequired();
 
         builder.HasOne(x => x.TeamsMessage)
@@ -74,8 +59,15 @@ public sealed class MessageMediaConfiguration : IEntityTypeConfiguration<Message
                 x.GraphHostedContentId
             })
             .IsUnique()
-            .HasFilter("\"graph_hosted_content_id\" IS NOT NULL")
             .HasDatabaseName("ux_message_media_hosted_content");
-    }
 
+        builder
+            .HasIndex(x => new
+            {
+                x.BucketName,
+                x.ObjectName
+            })
+            .IsUnique()
+            .HasDatabaseName("ux_bucket_name_object_name");
+    }
 }

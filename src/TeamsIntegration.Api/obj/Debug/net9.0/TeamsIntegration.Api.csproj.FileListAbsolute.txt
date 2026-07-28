@@ -163,3 +163,9 @@
 /Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/obj/Debug/net9.0/TeamsIntegration.Api.genruntimeconfig.cache
 /Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/obj/Debug/net9.0/ref/TeamsIntegration.Api.dll
 /Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/obj/Debug/net9.0/TeamsIntegration.Api.sourcelink.json
+/Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/bin/Debug/net9.0/CommunityToolkit.HighPerformance.dll
+/Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/bin/Debug/net9.0/Microsoft.Extensions.DependencyInjection.dll
+/Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/bin/Debug/net9.0/Microsoft.Extensions.Logging.dll
+/Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/bin/Debug/net9.0/Minio.dll
+/Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/bin/Debug/net9.0/System.IO.Hashing.dll
+/Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/bin/Debug/net9.0/System.Reactive.dll

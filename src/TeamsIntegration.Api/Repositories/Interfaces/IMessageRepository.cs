@@ -2,6 +2,9 @@ using TeamsIntegration.Api.Entities;
 
 namespace TeamsIntegration.Api.Repositories.Interfaces;
 
+/// <summary>
+/// It provides to manipulate teams messages on Database. Example Scenario: You fetched messages from "Microsoft Teams" and you will save them to Database.
+/// </summary>
 public interface IMessageRepository
 {
     /// <summary>

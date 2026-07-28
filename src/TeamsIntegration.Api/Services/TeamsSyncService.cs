@@ -1,3 +1,4 @@
+using TeamsIntegration.Api.Entities;
 using TeamsIntegration.Api.Mappings;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Repositories.Interfaces;
@@ -8,6 +9,8 @@ namespace TeamsIntegration.Api.Services;
 public sealed partial class TeamsSyncService(
     ITeamsRepository teamsRepo,
     IMessageRepository msgRepo,
+    IMessageMediaService msgMediaService,
+    IMessageMediaSynchronizationService msgMediaSyncService,
     TimeProvider timeProvider) : ITeamsSyncService
 {
     public async Task<ServiceResponse<ChannelSyncResponse>> SynchronizeChannelAsync(
@@ -18,6 +21,8 @@ public sealed partial class TeamsSyncService(
     {
         try
         {
+            var mediaSynchronizationItems = new List<(TeamsMessage Message, string[] HostedContentIds)>();
+
             // validate params
             if (string.IsNullOrWhiteSpace(teamId)
                 || string.IsNullOrWhiteSpace(channelId))
@@ -61,13 +66,27 @@ public sealed partial class TeamsSyncService(
 
                 if (existingMsg == null)
                 {
-                    await msgRepo.AddAsync(
-                        TeamsMessageMapper.CreateEntity(
-                            graphMsg,
+                    // save "teams message" to db
+                    var newMessage = TeamsMessageMapper.CreateEntity(
+                        graphMsg,
+                        teamId,
+                        channelId,
+                        utcNow);
+
+                    await msgRepo.AddAsync(newMessage, cancellationToken);
+
+                    // save "hosted contents" of message to buffer
+                    var hostedContentIds = msgMediaService
+                        .ExtractImages(
+                            graphMsg.Body?.Content,
                             teamId,
                             channelId,
-                            utcNow),
-                        cancellationToken);
+                            graphMsg.Id)
+                        .Select(img => img.Id)
+                        .ToArray();
+
+                    if (hostedContentIds.Length > 0)
+                        mediaSynchronizationItems.Add((newMessage, hostedContentIds));
 
                     insertedCount++;
                     continue;
@@ -84,6 +103,14 @@ public sealed partial class TeamsSyncService(
             }
 
             await msgRepo.SaveChangesAsync(cancellationToken);
+
+            // synchronize "hosted contents" on "MinIO" and "Db"
+            foreach (var item in mediaSynchronizationItems)
+                await msgMediaSyncService.SynchronizeAsync(
+                    item.Message,
+                    item.Message.GraphMessageId,
+                    item.HostedContentIds,
+                    cancellationToken);
 
             return new()
             {

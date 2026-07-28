@@ -3,6 +3,9 @@ using TeamsIntegration.Api.Models.Responses;
 
 namespace TeamsIntegration.Api.Services.Interfaces;
 
+/// <summary>
+/// It provides to fetch infos from Microsoft Teams. Example: "teams", "channels", "channel messages", "contents of channel messages"...
+/// </summary>
 public interface ITeamsService
 {
     Task<ServiceResponse<IEnumerable<TeamResponse>>> GetTeamsAsync(

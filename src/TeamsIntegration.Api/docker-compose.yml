@@ -24,5 +24,24 @@ services:
       timeout: 5s
       retries: 10
 
+  teams-mino:
+    image: minio/minio:latest
+    container_name: teams-minio
+    restart: unless-stopped
+    
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+    environment:
+      MINIO_ROOT_USER: teams-admin
+      MINIO_ROOT_PASSWORD: teams-password
+
+    command: server /data --console-address ":9001"
+
+    volumes:
+      - teams-minio-data:/data
+
 volumes:
   teams-postgres-data:
+  teams-minio-data:
