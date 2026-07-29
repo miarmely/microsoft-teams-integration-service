@@ -5,7 +5,7 @@ namespace TeamsIntegration.Api.Repositories.Interfaces;
 /// <summary>
 /// It provides to manipulate teams messages on Database. Example Scenario: You fetched messages from "Microsoft Teams" and you will save them to Database.
 /// </summary>
-public interface IMessageRepository
+public interface IMessageRepository : IBaseRepository
 {
     /// <summary>
     /// Create message on db.
@@ -41,8 +41,5 @@ public interface IMessageRepository
     Task<IEnumerable<TeamsMessage>> GetByChannelAsync(
         string teamId,
         string channelId,
-        CancellationToken cancellationToken = default);
-
-    Task SaveChangesAsync(
         CancellationToken cancellationToken = default);
 }

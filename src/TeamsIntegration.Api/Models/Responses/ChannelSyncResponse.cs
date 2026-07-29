@@ -28,5 +28,13 @@ public sealed record ChannelSyncResponse
     /// Failed message count because of exceptions occurred while message synchronization.
     /// </summary>
     public int FailedMessageCount { get; init; }
+    /// <summary>
+    /// Count of successfully synchronized medias of messages.
+    /// </summary>
+    public int SynchronizedMediaCount { get; init; }
+    /// <summary>
+    /// List of message ids which their media synchronization failed.
+    /// </summary>
+    public List<Guid> MessagesWhichMediaSyncFailed { get; init; }
     public DateTimeOffset SynchronizedAt { get; init; }
 }

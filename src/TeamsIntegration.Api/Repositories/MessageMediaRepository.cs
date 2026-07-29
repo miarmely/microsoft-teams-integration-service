@@ -6,7 +6,9 @@ using TeamsIntegration.Api.Repositories.Interfaces;
 namespace TeamsIntegration.Api.Repositories;
 
 public sealed class MessageMediaRepository(
-    TeamsDbContext dbCtx) : IMessageMediaRepository
+    TeamsDbContext dbCtx,
+    ILogger<MessageMediaRepository> logger)
+    : BaseRepository<MessageMediaRepository>(dbCtx, logger), IMessageMediaRepository
 {
     public async Task AddAsync(
         MessageMedia media,
@@ -28,11 +30,5 @@ public sealed class MessageMediaRepository(
             cancellationToken);
 
         return msgMedia;
-    }
-
-    public async Task SaveChangesAsync(
-        CancellationToken cancellationToken = default)
-    {
-        await dbCtx.SaveChangesAsync(cancellationToken);
     }
 }

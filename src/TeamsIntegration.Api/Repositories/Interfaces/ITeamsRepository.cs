@@ -34,7 +34,7 @@ public interface ITeamsRepository
         string messageId,
         CancellationToken cancellationToken = default);
 
-    Task<MediaContent?> GetHostedContentAsync(
+    Task<ServiceResponse<MediaContent>> GetHostedContentAsync(
         string teamId,
         string channelId,
         string messageId,

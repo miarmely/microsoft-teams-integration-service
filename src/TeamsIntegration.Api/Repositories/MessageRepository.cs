@@ -6,7 +6,9 @@ using TeamsIntegration.Api.Repositories.Interfaces;
 namespace TeamsIntegration.Api.Repositories;
 
 public sealed class MessageRepository(
-    TeamsDbContext dbCtx) : IMessageRepository
+    TeamsDbContext dbCtx,
+    ILogger<MessageRepository> logger)
+    : BaseRepository<MessageRepository>(dbCtx, logger), IMessageRepository
 {
     public async Task AddAsync(
         TeamsMessage message,
@@ -47,11 +49,5 @@ public sealed class MessageRepository(
             .ToArrayAsync(cancellationToken);
 
         return messages;
-    }
-
-    public async Task SaveChangesAsync(
-        CancellationToken cancellationToken = default)
-    {
-        await dbCtx.SaveChangesAsync(cancellationToken);
     }
 }

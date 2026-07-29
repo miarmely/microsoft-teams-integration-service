@@ -1,4 +1,5 @@
-using Microsoft.Graph.Models;
+using System.Data.Common;
+using Npgsql;
 using TeamsIntegration.Api.Entities;
 using TeamsIntegration.Api.Mappings;
 using TeamsIntegration.Api.Models.Responses;
@@ -18,7 +19,6 @@ public sealed partial class TeamsSyncService(
     public async Task<ServiceResponse<ChannelSyncResponse>> SynchronizeChannelAsync(
         string teamId,
         string channelId,
-        int dayFilter = 30,
         CancellationToken cancellationToken = default)
     {
         /////////////// validate params
@@ -32,7 +32,7 @@ public sealed partial class TeamsSyncService(
             };
 
 
-        /////////////// get "messages" from teams (EXCEPTION SAFE)
+        /////////////// get "messages" from teams  (EXCEPTION SAFE)
         var res = await teamsRepo.GetMessagesAsync(
             teamId,
             channelId,
@@ -43,149 +43,227 @@ public sealed partial class TeamsSyncService(
             {
                 IsSuccess = false,
                 StatusCode = res.StatusCode,
-                ErrorMessage = res.ErrorMessage
+                ErrorMessage = res.ErrorMessage!
             };
 
-        var teamsMessages = res.Data!;
+        var teamsMessages = res.Data?.ToArray() ?? [];
 
-        if (teamsMessages.Count() == 0)
+        if (teamsMessages.Length == 0)
             return new()
             {
                 IsSuccess = true,
-                StatusCode = 400,
-                ErrorMessage = $"There are no messages which fetched from Microsoft Teams. (Team: {teamId}, Channel: {channelId})"
+                StatusCode = StatusCodes.Status200OK,
+                Data = new()
+                {
+                    TeamId = teamId,
+                    ChannelId = channelId,
+                    ReceivedMessageCount = 0,
+                    InsertedMessageCount = 0,
+                    UpdatedMessageCount = 0,
+                    UnchangedMessageCount = 0,
+                    SkippedMessageCount = 0,
+                    FailedMessageCount = 0,
+                    SynchronizedAt = timeProvider.GetUtcNow()
+                }
             };
 
-        /////////////// synchronize messages
-        try
+
+        /////////////// synchronize messages and message medias
+        var mediaSynchronizationItems = new List<(TeamsMessage Message, string[] HostedContentIds)>();
+        var insertedCount = 0;
+        var updatedCount = 0;
+        var unchangedCount = 0;
+        var skippedCount = 0;  // Count of skipped messages which they haven't message id.
+        var failedMessageCount = 0;
+        var utcNow = timeProvider.GetUtcNow();
+
+        // synchronize messages
+        foreach (var msg in teamsMessages)
         {
-            var mediaSynchronizationItems = new List<(TeamsMessage Message, string[] HostedContentIds)>();
-            var insertedCount = 0;
-            var updatedCount = 0;
-            var unchangedCount = 0;
-            var skippedCount = 0;  // Count of skipped messages which they haven't message id.
-            var failedMessageCount = 0;
-            var utcNow = timeProvider.GetUtcNow();
+            TeamsMessage? processedEntity = null;
 
-            foreach (var msg in teamsMessages)
+            try
             {
-                try
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // pass if message hasn't any id
+                if (string.IsNullOrWhiteSpace(msg.Id))
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
+                    skippedCount++;
 
-                    // pass if message hasn't any id
-                    if (string.IsNullOrWhiteSpace(msg.Id))
-                    {
-                        skippedCount++;
-                        continue;
-                    }
+                    logger.LogWarning(
+                        "Teams message was skipped because it has no message ID. (Team: {TeamId}, Channel: {ChannelId})",
+                        teamId,
+                        channelId);
 
-                    //////////// create if message not found ////////////
-                    var existingMsg = await msgRepo.GetByGraphIdAsync(
+                    continue;
+                }
+
+                //////////// create if message not found ////////////
+                var existingMsg = await msgRepo.GetByGraphIdAsync(
+                    teamId,
+                    channelId,
+                    msg.Id,
+                    cancellationToken);
+
+                if (existingMsg == null)
+                {
+                    // convert "ChatMessage" to "TeamsMessage"
+                    var newMsg = TeamsMessageMapper.CreateEntity(
+                        msg,
                         teamId,
                         channelId,
-                        msg.Id,
-                        cancellationToken);
+                        utcNow);
 
-                    if (existingMsg == null)
-                    {
-                        TeamsMessage newMsg;
+                    processedEntity = newMsg;
 
-                        // convert "ChatMessage" to "TeamsMessage"
-                        newMsg = TeamsMessageMapper.CreateEntity(
-                            msg,
+                    await msgRepo.AddAsync(newMsg, cancellationToken);
+
+                    // save "hosted content ids" of message to buffer
+                    var hostedContentIds = msgMediaService
+                        .ExtractImages(
+                            msg.Body?.Content,
                             teamId,
                             channelId,
-                            utcNow);
+                            msg.Id)
+                        .Select(img => img.Id)
+                        .ToArray();
 
-                        await msgRepo.AddAsync(newMsg, cancellationToken);
+                    if (hostedContentIds.Length > 0)
+                        mediaSynchronizationItems.Add((newMsg, hostedContentIds));
 
-
-                        // save "hosted content ids" of message to buffer
-                        var hostedContentIds = msgMediaService
-                            .ExtractImages(
-                                msg.Body?.Content,
-                                teamId,
-                                channelId,
-                                msg.Id)
-                            .Select(img => img.Id)
-                            .ToArray();
-
-                        if (hostedContentIds.Length > 0)
-                            mediaSynchronizationItems.Add((newMsg, hostedContentIds));
-
-                        insertedCount++;
-                    }
-                    else
-                    {
-                        // update if message exists
-                        var hasChanges = TeamsMessageMapper.UpdateEntity(
-                            existingMsg,
-                            msg,
-                            utcNow);
-
-                        if (hasChanges) updatedCount++;
-                        else unchangedCount++;
-                    }
+                    insertedCount++;
                 }
-                catch (Exception ex)
+                else
                 {
-                    failedMessageCount++;
+                    processedEntity = existingMsg;
 
-                    logger.LogError(
-                        ex,
-                        "Failed to process teams message. (Team: {TeamId}, Channel: {ChannelId}, MessageId: {MessageId})",
-                        teamId,
-                        channelId,
-                        msg.Id);
+                    // update if message exists
+                    var hasChanges = TeamsMessageMapper.UpdateEntity(
+                        existingMsg,
+                        msg,
+                        utcNow);
+
+                    if (hasChanges) updatedCount++;
+                    else unchangedCount++;
                 }
-                ////////////////////////////////////////////////////////
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (NpgsqlException) // PostgreSQL connection error
+            {
+                throw;
+            }
+            catch (DbException)  // Database error (for if you use other database providers except PostgreSQL)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                failedMessageCount++;
 
-            await msgRepo.SaveChangesAsync(cancellationToken);
+                // clear "tracking" of the message entity
+                if (processedEntity != null)
+                {
+                    msgRepo.Detach(processedEntity);
+                }
 
-            // synchronize "hosted contents" on "MinIO" and "Db"
-            foreach (var item in mediaSynchronizationItems)
-                await msgMediaSyncService.SynchronizeAsync(
+                logger.LogError(
+                    ex,
+                    "Failed to process a Teams message. (Team: {TeamId}, Channel: {ChannelId}, MessageId: {MessageId})",
+                    teamId,
+                    channelId,
+                    msg.Id);
+            }
+        }
+
+        // commit changes to db after "teams messages" synchronization. (EXCEPTION SAFE)
+        var saveRes = await msgRepo.SaveChangesAsync(
+            teamId,
+            channelId,
+            cancellationToken);
+
+        if (!saveRes.IsSuccess)
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = saveRes.StatusCode,
+                ErrorMessage = saveRes.ErrorMessage
+            };
+
+        // synchronize medias of messages
+        var messagesWhichMediaSyncFailed = new List<Guid>();
+        var synchronizedMediaCount = 0;
+
+        foreach (var item in mediaSynchronizationItems)
+        {
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var mediaSyncRes = await msgMediaSyncService.SynchronizeAsync(
                     item.Message,
                     item.Message.GraphMessageId,
                     item.HostedContentIds,
                     cancellationToken);
 
-            return new()
-            {
-                IsSuccess = true,
-                StatusCode = 200,
-                Data = new()
+                if (!mediaSyncRes.IsSuccess)
                 {
-                    TeamId = teamId,
-                    ChannelId = channelId,
-                    ReceivedMessageCount = teamsMessages.Count(),
-                    InsertedMessageCount = insertedCount,
-                    UpdatedMessageCount = updatedCount,
-                    UnchangedMessageCount = unchangedCount,
-                    SkippedMessageCount = skippedCount,
-                    SynchronizedAt = timeProvider.GetUtcNow()
-                }
-            };
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            logger.LogInformation(
-                "Synchronize channel was cancelled. (by cancellation token) (Team: {TeamId}, Channel: {ChannelId})",
-                teamId,
-                channelId);
+                    messagesWhichMediaSyncFailed.Add(item.Message.Id);
 
-            throw;
-        }
-        catch (Exception ex)
-        {
-            return new()
+                    logger.LogWarning(
+                        "Media synchronization failed for a Teams message (Team: {TeamId}, Channel: {ChannelId}, MessageId: {MessageId})",
+                        teamId,
+                        channelId,
+                        item.Message.GraphMessageId);
+                }
+                else
+                    synchronizedMediaCount += item.HostedContentIds.Length;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                IsSuccess = false,
-                StatusCode = 500,
-                ErrorMessage = $"Error occured at 'SynchronizeChannelAsync' (Error: {ex.Message})"
-            };
+                logger.LogInformation(
+                    "Synchronize channel request was cancelled. (by cancellation token) (Team: {TeamId}, Channel: {ChannelId})",
+                    teamId,
+                    channelId);
+
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Unexpected error occurred while synchronizing message media. (Team: {TeamId}, Channel: {ChannelId})",
+                    teamId,
+                    channelId);
+
+                return new()
+                {
+                    IsSuccess = false,
+                    StatusCode = 500,
+                    ErrorMessage = "Unexpected error occurred while synchronizing message media."
+                };
+            }
         }
+
+        return new()
+        {
+            IsSuccess = true,
+            StatusCode = StatusCodes.Status200OK,
+            Data = new()
+            {
+                TeamId = teamId,
+                ChannelId = channelId,
+                ReceivedMessageCount = teamsMessages.Length,
+                InsertedMessageCount = insertedCount,
+                UpdatedMessageCount = updatedCount,
+                UnchangedMessageCount = unchangedCount,
+                SkippedMessageCount = skippedCount,
+                FailedMessageCount = failedMessageCount,
+                SynchronizedAt = timeProvider.GetUtcNow()
+            }
+        };
     }
 }

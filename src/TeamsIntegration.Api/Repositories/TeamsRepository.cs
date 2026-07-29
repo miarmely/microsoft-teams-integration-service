@@ -175,36 +175,151 @@ public partial class TeamsRepository(
         return hostedContents;
     }
 
-    public async Task<MediaContent?> GetHostedContentAsync(
+    public async Task<ServiceResponse<MediaContent>> GetHostedContentAsync(
         string teamId,
         string channelId,
         string messageId,
         string hostedContentId,
         CancellationToken cancellationToken = default)
     {
-        var hostedContent = await graphClient
-            .Teams[teamId]
-            .Channels[channelId]
-            .Messages[messageId]
-            .HostedContents[hostedContentId]
-            .GetAsync(cancellationToken: cancellationToken);
-
-        if (hostedContent == null) return null;
-
-        var stream = await graphClient
-            .Teams[teamId]
-            .Channels[channelId]
-            .Messages[messageId]
-            .HostedContents[hostedContentId]
-            .Content
-            .GetAsync(cancellationToken: cancellationToken);
-
-        if (stream == null) return null;
-
-        return new()
+        try
         {
-            Content = stream,
-            ContentType = hostedContent.ContentType ?? "application/octet-stream"
-        };
+            ////////// get "hosted content" of message from "teams"
+            var hostedContent = await graphClient
+                .Teams[teamId]
+                .Channels[channelId]
+                .Messages[messageId]
+                .HostedContents[hostedContentId]
+                .GetAsync(cancellationToken: cancellationToken);
+
+            if (hostedContent == null)
+            {
+                logger.LogWarning(
+                    "Hosted content not found. (Team: {TeamId}, Channel: {ChannelId}, Message: {MessageId}, HostedContent: {HostedContentId})",
+                    teamId,
+                    channelId,
+                    messageId,
+                    hostedContentId);
+
+                return new()
+                {
+                    IsSuccess = false,
+                    StatusCode = StatusCodes.Status404NotFound,
+                    ErrorMessage = "Hosted content not found."
+                };
+            }
+
+
+            ///////// get "hosted content" as stream from "teams"
+            var contentStream = await graphClient
+                .Teams[teamId]
+                .Channels[channelId]
+                .Messages[messageId]
+                .HostedContents[hostedContentId]
+                .Content
+                .GetAsync(cancellationToken: cancellationToken);
+
+            if (contentStream == null)
+            {
+                logger.LogWarning(
+                    "Hosted content stream not found. (Team: {TeamId}, Channel: {ChannelId}, Message: {MessageId}, HostedContent: {HostedContentId})",
+                    teamId,
+                    channelId,
+                    messageId,
+                    hostedContentId);
+
+                return new()
+                {
+                    IsSuccess = false,
+                    StatusCode = StatusCodes.Status404NotFound,
+                    ErrorMessage = "Hosted content stream not found."
+                };
+            }
+
+            return new()
+            {
+                IsSuccess = true,
+                StatusCode = 200,
+                Data = new()
+                {
+                    Content = contentStream,
+                    ContentType = hostedContent.ContentType ?? "application/octet-stream"
+                }
+            };
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            logger.LogInformation(
+                "Hosted content download was cancelled. (by cancellation token) (Team: {TeamId}, Channel: {ChannelId})",
+                teamId,
+                channelId);
+
+            throw;
+        }
+        catch (ODataError err)  // graph api errors (like 400, 404, 429, 500...)
+        {
+            var graphStatusCode = MapGraphStatusCode(err.ResponseStatusCode);
+
+            logger.LogWarning(
+                err,
+                "Microsoft Graph rejected the 'hosted content fetching' request. (Team: {TeamId}, Channel: {ChannelId}, StatusCode: {StatusCode}, Message: {ErrorMsg})",
+                teamId,
+                channelId,
+                graphStatusCode,
+                err.Error?.Message ?? "Unknown Error");
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = graphStatusCode,
+                ErrorMessage = "Microsoft Graph rejected the 'hosted content fetching' request."
+            };
+        }
+        catch (HttpRequestException err)  // network errors (like DNS failure, refused connection, etc.)
+        {
+            logger.LogError(
+                err,
+                "'Network error' occurred while fetching hosted content from Teams. (Team: {TeamId}, Channel: {ChannelId})",
+                teamId,
+                channelId);
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = err.StatusCode != null ? (int)err.StatusCode : StatusCodes.Status503ServiceUnavailable,
+                ErrorMessage = "Network error occurred while fetching hosted content from Teams."
+            };
+        }
+        catch (ApiException err)  // Microsoft Graph SDK errors (like 400, 404, 429, 500...)
+        {
+            logger.LogError(
+                err,
+                "Microsoft Graph SDK error occurred while fetching hosted content from Teams. (Team: {TeamId}, Channel: {ChannelId}, StatusCode: {StatusCode})",
+                teamId,
+                channelId,
+                err.ResponseStatusCode);
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = MapGraphStatusCode(err.ResponseStatusCode),
+                ErrorMessage = "Microsoft Graph could not process the request."
+            };
+        }
+        catch (Exception err)  // unexpected errors
+        {
+            logger.LogError(
+                err,
+                "Unexpected error while fetching hosted content from Teams. (Team: {TeamId}, Channel: {ChannelId})",
+                teamId,
+                channelId);
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = 500,
+                ErrorMessage = "Unexpected server error."
+            };
+        }
     }
 }
