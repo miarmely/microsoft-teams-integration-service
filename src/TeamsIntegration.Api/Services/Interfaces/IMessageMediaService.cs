@@ -2,6 +2,9 @@ using TeamsIntegration.Api.Models.Responses;
 
 namespace TeamsIntegration.Api.Services.Interfaces;
 
+/// <summary>
+/// It provides to manipulate on "messages media". Example: You want to get "ids" of "message media" from string "teams message content".
+/// </summary>
 public interface IMessageMediaService
 {
     /// <summary>

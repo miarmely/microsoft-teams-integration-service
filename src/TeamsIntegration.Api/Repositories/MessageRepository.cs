@@ -25,10 +25,10 @@ public sealed class MessageRepository(
     {
         var msg = await dbCtx.TeamsMessages
             .Include(x => x.Media)
-            .SingleOrDefaultAsync(m =>
-                m.TeamId == teamId
-                && m.ChannelId == channelId
-                && m.GraphMessageId == graphMessageId,
+            .SingleOrDefaultAsync(
+                m => m.TeamId == teamId
+                    && m.ChannelId == channelId
+                    && m.GraphMessageId == graphMessageId,
                 cancellationToken);
 
         return msg;

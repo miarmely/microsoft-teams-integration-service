@@ -1,5 +1,6 @@
 using Microsoft.Graph.Models;
 using TeamsIntegration.Api.Models.Dtos;
+using TeamsIntegration.Api.Models.Responses;
 
 namespace TeamsIntegration.Api.Repositories.Interfaces;
 
@@ -22,10 +23,9 @@ public interface ITeamsRepository
     /// <param name="dayFilter">Specify will be fetched messages as how many days ago of "creation date of last message". Ex: fetch all messages which month ago of last message.</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<IEnumerable<ChatMessage>> GetMessagesAsync(
+    Task<ServiceResponse<IEnumerable<ChatMessage>>> GetMessagesAsync(
         string teamId,
         string channelId,
-        int dayFilter = 30,
         CancellationToken cancellationToken = default);
 
     Task<IEnumerable<ChatMessageHostedContent>> GetHostedContentsAsync(

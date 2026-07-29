@@ -24,5 +24,9 @@ public sealed record ChannelSyncResponse
     /// Count of skipped messages which they haven't message id.
     /// </summary>
     public int SkippedMessageCount { get; init; }
+    /// <summary>
+    /// Failed message count because of exceptions occurred while message synchronization.
+    /// </summary>
+    public int FailedMessageCount { get; init; }
     public DateTimeOffset SynchronizedAt { get; init; }
 }
