@@ -5,7 +5,7 @@ namespace TeamsIntegration.Api.Services.Interfaces;
 
 public interface IMessageMediaSynchronizationService
 {
-    Task<ServiceResponse> SynchronizeAsync(
+    Task<ServiceResponse<List<MessageMedia>>> SynchronizeAsync(
         TeamsMessage teamsMessage,
         string graphMessageId,
         IEnumerable<string> hostedContentIds,

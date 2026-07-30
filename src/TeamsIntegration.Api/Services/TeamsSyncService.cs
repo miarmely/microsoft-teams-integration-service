@@ -14,6 +14,7 @@ public sealed partial class TeamsSyncService(
     IMessageMediaService msgMediaService,
     IMessageMediaSynchronizationService msgMediaSyncService,
     TimeProvider timeProvider,
+    IObjectStorageService objStorageService,
     ILogger<TeamsSyncService> logger) : ITeamsSyncService
 {
     public async Task<ServiceResponse<ChannelSyncResponse>> SynchronizeChannelAsync(
@@ -32,7 +33,7 @@ public sealed partial class TeamsSyncService(
             };
 
 
-        /////////////// get "messages" from teams  (EXCEPTION SAFE)
+        /////////////// STEP 1) get "messages" from teams  (EXCEPTION SAFE)
         var res = await teamsRepo.GetMessagesAsync(
             teamId,
             channelId,
@@ -68,7 +69,7 @@ public sealed partial class TeamsSyncService(
             };
 
 
-        /////////////// synchronize messages and message medias
+        /////////////// STEP 2) synchronize messages and message medias
         var mediaSynchronizationItems = new List<(TeamsMessage Message, string[] HostedContentIds)>();
         var insertedCount = 0;
         var updatedCount = 0;
@@ -99,13 +100,13 @@ public sealed partial class TeamsSyncService(
                     continue;
                 }
 
-                //////////// create if message not found ////////////
                 var existingMsg = await msgRepo.GetByGraphIdAsync(
                     teamId,
                     channelId,
                     msg.Id,
                     cancellationToken);
 
+                // create message 
                 if (existingMsg == null)
                 {
                     // convert "ChatMessage" to "TeamsMessage"
@@ -134,6 +135,8 @@ public sealed partial class TeamsSyncService(
 
                     insertedCount++;
                 }
+
+                // update message 
                 else
                 {
                     processedEntity = existingMsg;
@@ -179,23 +182,9 @@ public sealed partial class TeamsSyncService(
             }
         }
 
-        // commit changes to db after "teams messages" synchronization. (EXCEPTION SAFE)
-        var saveRes = await msgRepo.SaveChangesAsync(
-            teamId,
-            channelId,
-            cancellationToken);
-
-        if (!saveRes.IsSuccess)
-            return new()
-            {
-                IsSuccess = false,
-                StatusCode = saveRes.StatusCode,
-                ErrorMessage = saveRes.ErrorMessage
-            };
-
         // synchronize medias of messages
         var messagesWhichMediaSyncFailed = new List<Guid>();
-        var synchronizedMediaCount = 0;
+        var synchronizedMedias = new List<MessageMedia>();
 
         foreach (var item in mediaSynchronizationItems)
         {
@@ -218,9 +207,19 @@ public sealed partial class TeamsSyncService(
                         teamId,
                         channelId,
                         item.Message.GraphMessageId);
+
+                    var detachRes = msgRepo.Detach(item.Message);
+
+                    if (!detachRes.IsSuccess)
+                        logger.LogWarning(
+                            "Teams message which media synchronization failed couldn't detached from db. (Team: {TeamId}, Channel: {ChannelId}, MessageId: {MessageId})",
+                            teamId,
+                            channelId,
+                            item.Message.GraphMessageId);
                 }
                 else
-                    synchronizedMediaCount += item.HostedContentIds.Length;
+                    synchronizedMedias.AddRange(mediaSyncRes.Data ?? []);
+
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -246,6 +245,43 @@ public sealed partial class TeamsSyncService(
                     ErrorMessage = "Unexpected error occurred while synchronizing message media."
                 };
             }
+        }
+
+        // commit changes to db after all synchronizations has finished. (EXCEPTION SAFE)
+        var saveRes = await msgRepo.SaveChangesAsync(
+            teamId,
+            channelId,
+            cancellationToken);
+
+        if (!saveRes.IsSuccess)
+        {
+            // remove all trackings
+            msgRepo.ClearTracking();
+
+            // delete all "uploaded medias" from Object Storage
+            foreach (var media in synchronizedMedias)
+            {
+                var deleteRes = await objStorageService.DeleteAsync(
+                    media.ObjectName,
+                    CancellationToken.None);
+
+                if (!deleteRes.IsSuccess)
+                {
+                    logger.LogWarning(
+                        "Media of one Teams message couldn't be deleted from object storage. (Team: {TeamId}, Channel: {ChannelId}, Message: {MessageId}, Media: {MediaId})",
+                        media.TeamsMessage.TeamId,
+                        media.TeamsMessage.ChannelId,
+                        media.TeamsMessage.Id,
+                        media.Id);
+                }
+            }
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = saveRes.StatusCode,
+                ErrorMessage = saveRes.ErrorMessage
+            };
         }
 
         return new()

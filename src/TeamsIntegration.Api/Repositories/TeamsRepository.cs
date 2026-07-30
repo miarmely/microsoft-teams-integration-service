@@ -2,29 +2,14 @@ using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
 using Microsoft.Kiota.Abstractions;
+using TeamsIntegration.Api.Mappings;
 using TeamsIntegration.Api.Models.Dtos;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Repositories.Interfaces;
 
 namespace TeamsIntegration.Api.Repositories;
 
-public partial class TeamsRepository
-{
-    private static int MapGraphStatusCode(int graphStatusCode)
-    {
-        return graphStatusCode switch
-        {
-            400 => StatusCodes.Status400BadRequest,
-            404 => StatusCodes.Status404NotFound,
-            429 => StatusCodes.Status503ServiceUnavailable,
-            401 or 403 => StatusCodes.Status502BadGateway,
-            >= 500 and <= 599 => StatusCodes.Status503ServiceUnavailable,
-            _ => StatusCodes.Status502BadGateway
-        };
-    }
-}
-
-public partial class TeamsRepository(
+public class TeamsRepository(
     GraphServiceClient graphClient,
     ILogger<TeamsRepository> logger) : ITeamsRepository
 {
@@ -92,7 +77,7 @@ public partial class TeamsRepository(
         }
         catch (ODataError err)  // graph api errors
         {
-            var graphStatusCode = MapGraphStatusCode(err.ResponseStatusCode);
+            var graphStatusCode = GraphStatusCodeMapper.Map(err.ResponseStatusCode);
 
             logger.LogWarning(
                 err,
@@ -258,7 +243,7 @@ public partial class TeamsRepository(
         }
         catch (ODataError err)  // graph api errors (like 400, 404, 429, 500...)
         {
-            var graphStatusCode = MapGraphStatusCode(err.ResponseStatusCode);
+            var graphStatusCode = GraphStatusCodeMapper.Map(err.ResponseStatusCode);
 
             logger.LogWarning(
                 err,
@@ -302,7 +287,7 @@ public partial class TeamsRepository(
             return new()
             {
                 IsSuccess = false,
-                StatusCode = MapGraphStatusCode(err.ResponseStatusCode),
+                StatusCode = GraphStatusCodeMapper.Map(err.ResponseStatusCode),
                 ErrorMessage = "Microsoft Graph could not process the request."
             };
         }
