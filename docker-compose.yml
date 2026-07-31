@@ -1,0 +1,111 @@
+services:
+  teams-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: teams-integration-api
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+      minio:
+        condition: service_healthy
+    
+    restart: unless-stopped
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_URLS: http://+:8080
+
+      ConnectionStrings__PostgreSQL: "Host=postgresql;Port=5432;Database=teams_integration;Username=postgres;Password=admin" 
+
+      MicrosoftGraph__TenantId: ${GRAPH_TENANT_ID}
+      MicrosoftGraph__ClientId: ${GRAPH_CLIENT_ID}
+      MicrosoftGraph__ClientSecret: ${GRAPH_CLIENT_SECRET}
+
+      Minio__Endpoint: minio:9000
+      Minio__AccessKey: teams-admin
+      Minio__SecretKey: teams-password
+      Minio__BucketName: teams-integration
+      Minio__UseSsl: "false"
+      Minio__PresignedUrlExpirationDay: "7"
+
+      HttpsRedirection__Enabled: "false"
+
+    networks:
+      - teams-network
+
+  postgresql:
+    image: postgres:18
+
+    container_name: teams-postgresql
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: teams_integration
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+
+    volumes:
+      - teams-postgres-data:/var/lib/postgresql
+
+    ports:
+      - "5432:5432"
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d teams_integration"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+    networks:
+      - teams-network
+
+  minio:
+    image: minio/minio:latest
+
+    container_name: teams-minio
+    
+    restart: unless-stopped
+
+    command: server /data --console-address ":9001"
+
+    environment:
+      MINIO_ROOT_USER: teams-admin
+      MINIO_ROOT_PASSWORD: teams-password
+
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+    volumes:
+      - teams-minio-data:/data
+
+    healthcheck:
+      test: [
+        "CMD", 
+        "curl",
+        "f",
+        "http://localhost:9000/minio/health/live"
+      ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+    networks:
+      - teams-network
+
+volumes:
+  teams-postgres-data:
+  teams-minio-data:
+
+networks:
+  teams-network:

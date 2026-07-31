@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITeamsSyncService, TeamsSyncService>();
         services.AddScoped<IObjectStorageService, MinioObjectStorageService>();
         services.AddScoped<IMessageMediaSynchronizationService, MessageMediaSynchronizationService>();
+        services.AddScoped<IMinioBucketInitializerService, MinioBucketInitializerService>();
 
         services.AddSingleton<IMessageMediaService, MessageMediaService>();
         services.AddSingleton(TimeProvider.System);

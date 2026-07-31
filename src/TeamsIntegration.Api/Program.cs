@@ -1,4 +1,8 @@
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
+using TeamsIntegration.Api.Data;
 using TeamsIntegration.Api.Extensions;
+using TeamsIntegration.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +15,21 @@ builder.Services.AddSwagger();
 builder.Services.AddMinio(builder.Configuration);
 
 var app = builder.Build();
+
+// auto impletement migrations to db (FOR PRODUCTION)
+using (var scope = app.Services.CreateScope())
+{
+    var dbCtx = scope.ServiceProvider.GetRequiredService<TeamsDbContext>();
+
+    await dbCtx.Database.MigrateAsync();
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    var bucketInitializer = scope.ServiceProvider.GetRequiredService<MinioBucketInitializerService>();
+
+    await bucketInitializer.InitializeAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -26,6 +45,18 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// for production
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
+// Don't use "https redirections" for docker containers (FOR PRODUCTION)
+if (builder.Configuration.GetValue<bool>("HttpsRedirection:Enabled"))
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
@@ -37,6 +68,8 @@ app.Run();
     BNS Uretim:
     Team Id: 1560909e-d5c6-4695-a367-853e9beae2ff
     Channel Id: 19:z-xYxl8ZP388iVnmiFk9mKQHT48_bmLqIqZmhv1ubkM1@thread.tacv2
+
+    http://localhost:8080/api/TeamsSync/1560909e-d5c6-4695-a367-853e9beae2ff/channels/19:z-xYxl8ZP388iVnmiFk9mKQHT48_bmLqIqZmhv1ubkM1@thread.tacv2/sync?fromDate=2026-07-25T00:00:00Z
 */
 
 /*
