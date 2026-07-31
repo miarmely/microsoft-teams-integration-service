@@ -80,13 +80,17 @@ public sealed class TeamsService(
     public async Task<ServiceResponse<IEnumerable<TeamsMessageResponse>>> GetMessagesAsync(
         string teamId,
         string channelId,
-        CancellationToken cancellationToken)
+        DateTimeOffset fromDate,
+        DateTimeOffset? toDate = null,
+        CancellationToken cancellationToken = default)
     {
         // fetch messages from "Teams" (EXCEPTION SAFE)
         var msgRes = await teamsRepo.GetMessagesAsync(
             teamId,
             channelId,
-            cancellationToken);
+            fromDate,
+            toDate ?? DateTimeOffset.MaxValue,
+            cancellationToken: cancellationToken);
 
         if (!msgRes.IsSuccess)
         {

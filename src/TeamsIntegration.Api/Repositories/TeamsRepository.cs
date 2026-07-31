@@ -39,15 +39,22 @@ public class TeamsRepository(
         return channels;
     }
 
+
     public async Task<ServiceResponse<IEnumerable<ChatMessage>>> GetMessagesAsync(
         string teamId,
         string channelId,
+        DateTimeOffset fromDate,
+        DateTimeOffset toDate,
+        int fetchedMsgCountPerPage = 50,
         CancellationToken cancellationToken = default)
     {
         try
         {
             var allMessages = new List<ChatMessage>();
-            var fetchedMsgCount = 0;
+            var totalFetchedMsgCount = 0;
+            var totalFetchedPageCount = 1;
+            var passingPageTolerance = 3;  // if current page doesn't exists messages which matching conditions then loop not breaks, the algorithm looks other page. Page count will be looked depends "passingPageTolerance" value. 
+            var passedPageCount = 0;
 
             var res = await graphClient
                 .Teams[teamId]
@@ -56,15 +63,42 @@ public class TeamsRepository(
                 .GetAsync(
                     reqCnfg =>
                     {
-                        reqCnfg.QueryParameters.Top = 50; // 50 is max
+                        reqCnfg.QueryParameters.Top = fetchedMsgCountPerPage;
                     },
                     cancellationToken);
 
             // fetch all messages on channel
-            while (true)
+            while (res != null)
             {
-                if (res == null
-                    || string.IsNullOrEmpty(res.OdataNextLink)) break;
+                // do filters to messages
+                var messagesOnPage = res.Value ?? [];
+                var messagesOnPageFiltered = messagesOnPage
+                    .Where(m => m.CreatedDateTime >= fromDate
+                        && m.CreatedDateTime <= toDate)
+                    .Distinct()
+                    .ToArray();
+
+                // if page doesn't has messages which matching filters, look other page until counter ends
+                if (messagesOnPageFiltered.Length <= 0)
+                {
+                    if (passedPageCount < passingPageTolerance) passedPageCount++;
+                    else break;
+                }
+                else
+                    passedPageCount = 0;  // reset
+
+                // save fetched messages
+                allMessages.AddRange(messagesOnPageFiltered);
+                totalFetchedMsgCount += fetchedMsgCountPerPage;
+
+                logger.LogInformation(
+                    "{FetchedMsgCount} messages fetched, {FilteredMsgCount} messages matched with filters, {totalFetchedPageCount} page fetched.",
+                    totalFetchedMsgCount,
+                    messagesOnPageFiltered.Length,
+                    totalFetchedPageCount);
+
+                // fetch next page
+                if (string.IsNullOrEmpty(res.OdataNextLink)) break;
 
                 res = await graphClient
                     .Teams[teamId]
@@ -74,16 +108,11 @@ public class TeamsRepository(
                     .GetAsync(
                         reqCnfg =>
                         {
-                            reqCnfg.QueryParameters.Top = 50; // 50 is max
+                            reqCnfg.QueryParameters.Top = fetchedMsgCountPerPage;
                         },
                         cancellationToken);
 
-                allMessages.AddRange(res!.Value ?? []);
-                fetchedMsgCount += 50;
-
-                logger.LogInformation(
-                    "{fetchedMsgCount} Teams message fetched.",
-                    fetchedMsgCount);
+                totalFetchedPageCount++;
             }
 
             return new()

@@ -12,5 +12,7 @@ public interface ITeamsSyncService
     Task<ServiceResponse<ChannelSyncResponse>> SynchronizeChannelAsync(
         string teamId,
         string channelId,
+        DateTimeOffset fromDate,
+        DateTimeOffset? toDate = null,
         CancellationToken cancellationToken = default);
 }

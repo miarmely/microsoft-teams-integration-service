@@ -7,8 +7,7 @@ namespace TeamsIntegration.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 public sealed class TeamsController(
-    ITeamsService teamsService,
-    ITeamsSyncService teamsSyncService) : ControllerBase
+    ITeamsService teamsService) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetTeams(
@@ -38,11 +37,15 @@ public sealed class TeamsController(
     public async Task<IActionResult> GetMessages(
         [FromRoute] string teamId,
         [FromRoute] string channelId,
-        CancellationToken cancellationToken)
+        [FromQuery] DateTimeOffset fromDate,
+        [FromQuery] DateTimeOffset? toDate = null,
+        CancellationToken cancellationToken = default)
     {
         var res = await teamsService.GetMessagesAsync(
             teamId,
             channelId,
+            fromDate,
+            toDate,
             cancellationToken);
 
         return StatusCode(res.StatusCode, res);
@@ -70,20 +73,5 @@ public sealed class TeamsController(
         return File(
             res.Data!.Content,
             res.Data!.ContentType);
-    }
-
-
-    [HttpPost("{teamId}/channels/{channelId}/sync")]
-    public async Task<IActionResult> SynchronizeChannel(
-        [FromRoute] string teamId,
-        [FromRoute] string channelId,
-        CancellationToken cancellationToken)
-    {
-        var res = await teamsSyncService.SynchronizeChannelAsync(
-            teamId,
-            channelId,
-            cancellationToken);
-
-        return StatusCode(res.StatusCode, res);
     }
 }

@@ -32,6 +32,8 @@ app.MapControllers();
 app.Run();
 
 /*
+    DB NAME: teams_integration
+
     BNS Uretim:
     Team Id: 1560909e-d5c6-4695-a367-853e9beae2ff
     Channel Id: 19:z-xYxl8ZP388iVnmiFk9mKQHT48_bmLqIqZmhv1ubkM1@thread.tacv2

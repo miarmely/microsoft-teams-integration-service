@@ -18,6 +18,8 @@ public interface ITeamsService
     Task<ServiceResponse<IEnumerable<TeamsMessageResponse>>> GetMessagesAsync(
         string teamId,
         string channelId,
+        DateTimeOffset fromDate,
+        DateTimeOffset? toDate = null,
         CancellationToken cancellationToken = default);
 
     Task<ServiceResponse<MediaContent?>> GetMessageImageAsync(

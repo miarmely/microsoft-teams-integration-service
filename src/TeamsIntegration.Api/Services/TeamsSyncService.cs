@@ -1,4 +1,5 @@
 using System.Data.Common;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql;
 using TeamsIntegration.Api.Entities;
 using TeamsIntegration.Api.Mappings;
@@ -20,6 +21,8 @@ public sealed partial class TeamsSyncService(
     public async Task<ServiceResponse<ChannelSyncResponse>> SynchronizeChannelAsync(
         string teamId,
         string channelId,
+        DateTimeOffset fromDate,
+        DateTimeOffset? toDate = null,
         CancellationToken cancellationToken = default)
     {
         /////////////// validate params
@@ -37,7 +40,9 @@ public sealed partial class TeamsSyncService(
         var res = await teamsRepo.GetMessagesAsync(
             teamId,
             channelId,
-            cancellationToken);
+            fromDate,
+            toDate ?? DateTimeOffset.MaxValue,  // fetch until today if null
+            cancellationToken: cancellationToken);
 
         if (!res.IsSuccess)
             return new()

@@ -17,15 +17,21 @@ public interface ITeamsRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Fetch messages from Microsoft Teams.
     /// </summary>
     /// <param name="teamId"></param>
     /// <param name="channelId"></param>
-    /// <param name="dayFilter">Specify will be fetched messages as how many days ago of "creation date of last message". Ex: fetch all messages which month ago of last message.</param>
+    /// <param name="fromDate">Filter for message "creationDate". It represents start date.</param>
+    /// <param name="toDate">Filter for message "creationDate". It represents end date.</param>
+    /// <param name="fetchedMsgCountPerPage">How many page will be fetched from Teams per page. Max fetching count is 50 per page.</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     Task<ServiceResponse<IEnumerable<ChatMessage>>> GetMessagesAsync(
         string teamId,
         string channelId,
+        DateTimeOffset fromDate,
+        DateTimeOffset toDate,
+        int fetchedMsgCountPerPage = 50,  // 50 is max
         CancellationToken cancellationToken = default);
 
     Task<IEnumerable<ChatMessageHostedContent>> GetHostedContentsAsync(
