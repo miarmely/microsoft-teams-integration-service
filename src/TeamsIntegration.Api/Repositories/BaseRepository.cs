@@ -11,6 +11,8 @@ public partial class BaseRepository<TSubRepo>(
     TeamsDbContext dbCtx,
     ILogger<TSubRepo> logger) : IBaseRepository
 {
+    protected TeamsDbContext DbCtx { get; } = dbCtx;
+
     public async Task<ServiceResponse> SaveChangesAsync(
         string? teamId = null,
         string? channelId = null,
@@ -18,7 +20,7 @@ public partial class BaseRepository<TSubRepo>(
     {
         try
         {
-            await dbCtx.SaveChangesAsync(cancellationToken);
+            await DbCtx.SaveChangesAsync(cancellationToken);
 
             return new()
             {
@@ -116,7 +118,7 @@ public partial class BaseRepository<TSubRepo>(
 
         try
         {
-            dbCtx.Entry(message).State = EntityState.Detached;
+            DbCtx.Entry(message).State = EntityState.Detached;
 
             return new()
             {
@@ -156,7 +158,7 @@ public partial class BaseRepository<TSubRepo>(
     {
         try
         {
-            dbCtx.ChangeTracker.Clear();
+            DbCtx.ChangeTracker.Clear();
 
             return new()
             {

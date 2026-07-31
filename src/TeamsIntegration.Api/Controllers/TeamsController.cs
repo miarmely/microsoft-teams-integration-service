@@ -38,13 +38,11 @@ public sealed class TeamsController(
     public async Task<IActionResult> GetMessages(
         [FromRoute] string teamId,
         [FromRoute] string channelId,
-        [FromRoute] int dayFilter,
         CancellationToken cancellationToken)
     {
         var res = await teamsService.GetMessagesAsync(
             teamId,
             channelId,
-            dayFilter,
             cancellationToken);
 
         return StatusCode(res.StatusCode, res);
@@ -75,17 +73,15 @@ public sealed class TeamsController(
     }
 
 
-    [HttpPost("{teamId}/channels/{channelId}/sync/{dayFilter=30}")]
+    [HttpPost("{teamId}/channels/{channelId}/sync")]
     public async Task<IActionResult> SynchronizeChannel(
         [FromRoute] string teamId,
         [FromRoute] string channelId,
-        [FromRoute] int dayFilter,
         CancellationToken cancellationToken)
     {
         var res = await teamsSyncService.SynchronizeChannelAsync(
             teamId,
             channelId,
-            dayFilter,
             cancellationToken);
 
         return StatusCode(res.StatusCode, res);

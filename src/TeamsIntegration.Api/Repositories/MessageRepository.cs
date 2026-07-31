@@ -14,7 +14,7 @@ public sealed class MessageRepository(
         TeamsMessage message,
         CancellationToken cancellationToken = default)
     {
-        await dbCtx.TeamsMessages.AddAsync(
+        await DbCtx.TeamsMessages.AddAsync(
             message,
             cancellationToken);
     }
@@ -25,7 +25,7 @@ public sealed class MessageRepository(
         string graphMessageId,
         CancellationToken cancellationToken = default)
     {
-        var msg = await dbCtx.TeamsMessages
+        var msg = await DbCtx.TeamsMessages
             .Include(x => x.Media)
             .SingleOrDefaultAsync(
                 m => m.TeamId == teamId
@@ -41,7 +41,7 @@ public sealed class MessageRepository(
         string channelId,
         CancellationToken cancellationToken = default)
     {
-        var messages = await dbCtx.TeamsMessages
+        var messages = await DbCtx.TeamsMessages
             .Include(m => m.Media)
             .Where(m => m.TeamId == teamId
                 && m.ChannelId == channelId)

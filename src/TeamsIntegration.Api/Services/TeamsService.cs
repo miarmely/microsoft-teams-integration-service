@@ -8,7 +8,8 @@ namespace TeamsIntegration.Api.Services;
 
 public sealed class TeamsService(
     ITeamsRepository teamsRepo,
-    IMessageMediaService msgMediaService)
+    IMessageMediaService msgMediaService,
+    ILogger<TeamsService> logger)
     : ITeamsService
 {
     public async Task<ServiceResponse<IEnumerable<TeamResponse>>> GetTeamsAsync(
@@ -79,57 +80,62 @@ public sealed class TeamsService(
     public async Task<ServiceResponse<IEnumerable<TeamsMessageResponse>>> GetMessagesAsync(
         string teamId,
         string channelId,
-        int dayFilter,
         CancellationToken cancellationToken)
     {
-        try
+        // fetch messages from "Teams" (EXCEPTION SAFE)
+        var msgRes = await teamsRepo.GetMessagesAsync(
+            teamId,
+            channelId,
+            cancellationToken);
+
+        if (!msgRes.IsSuccess)
         {
-            var messages = await teamsRepo.GetMessagesAsync(
+            logger.LogWarning(
+                "Teams messages could not be fetched. (Team: {TeamId}, Channel: {ChannelId})",
                 teamId,
-                channelId,
-                dayFilter,
-                cancellationToken);
+                channelId);
 
-            var data = messages
-                .Where(m => !string.IsNullOrWhiteSpace(m.Id))
-                .Select(m =>
-                {
-                    var images = msgMediaService.ExtractImages(
-                        m.Body?.Content,
-                        teamId,
-                        channelId,
-                        m.Id!);
-
-                    return new TeamsMessageResponse
-                    {
-                        Id = m.Id!,
-                        Content = m.Body?.Content,
-                        ContentType = m.Body?.ContentType.ToString(),
-                        Subject = m.Subject,
-                        SenderDisplayName = m.From?.User?.DisplayName,
-                        CreatedDateTime = m.CreatedDateTime,
-                        LastModifiedDateTime = m.LastModifiedDateTime,
-                        WebUrl = m.WebUrl,
-                        Images = images
-                    };
-                });
-
-            return new()
-            {
-                IsSuccess = true,
-                StatusCode = 200,
-                Data = data
-            };
-        }
-        catch (Exception ex)
-        {
             return new()
             {
                 IsSuccess = false,
-                StatusCode = 500,
-                ErrorMessage = $"Error at 'GetMessagesAsync'. (Error: {ex.Message})",
+                StatusCode = msgRes.StatusCode,
+                ErrorMessage = msgRes.ErrorMessage
             };
         }
+
+        var messages = msgRes.Data ?? [];
+
+        // set response data
+        var data = messages
+            .Where(m => !string.IsNullOrWhiteSpace(m.Id))
+            .Select(m =>
+            {
+                var images = msgMediaService.ExtractImages(
+                    m.Body?.Content,
+                    teamId,
+                    channelId,
+                    m.Id!);
+
+                return new TeamsMessageResponse
+                {
+                    Id = m.Id!,
+                    Content = m.Body?.Content,
+                    ContentType = m.Body?.ContentType.ToString(),
+                    Subject = m.Subject,
+                    SenderDisplayName = m.From?.User?.DisplayName,
+                    CreatedDateTime = m.CreatedDateTime,
+                    LastModifiedDateTime = m.LastModifiedDateTime,
+                    WebUrl = m.WebUrl,
+                    Images = images
+                };
+            });
+
+        return new()
+        {
+            IsSuccess = true,
+            StatusCode = 200,
+            Data = data
+        };
     }
 
     public async Task<ServiceResponse<MediaContent?>> GetMessageImageAsync(
@@ -139,30 +145,38 @@ public sealed class TeamsService(
         string imageId,
         CancellationToken cancellationToken = default)
     {
-        try
+        // get a "media" of message (EXCEPTION SAFE)
+        var contentRes = await teamsRepo.GetHostedContentAsync(
+            teamId,
+            channelId,
+            messageId,
+            imageId,
+            cancellationToken);
+
+        if (!contentRes.IsSuccess)
         {
-            var msgImg = await teamsRepo.GetHostedContentAsync(
+            logger.LogWarning(
+                "Hosted content of the Teams message could not be fetched. (Team: {TeamId}, Channel: {ChannelId}, Message: {MessageId}, Content: {ContentId})",
                 teamId,
                 channelId,
                 messageId,
-                imageId,
-                cancellationToken);
+                imageId);
 
             return new()
             {
-                IsSuccess = true,
-                StatusCode = 200,
-                Data = msgImg
-            };
-        }
-        catch (Exception ex)
-        {
-            return new()
-            {
                 IsSuccess = false,
-                StatusCode = 500,
-                ErrorMessage = $"Error at 'GetMessageImageAsync'. (Error: {ex.Message})",
+                StatusCode = contentRes.StatusCode,
+                ErrorMessage = contentRes.ErrorMessage
             };
         }
+
+        var msgImg = contentRes.Data;
+
+        return new()
+        {
+            IsSuccess = true,
+            StatusCode = 200,
+            Data = msgImg
+        };
     }
 }

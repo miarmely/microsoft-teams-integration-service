@@ -46,6 +46,9 @@ public class TeamsRepository(
     {
         try
         {
+            var allMessages = new List<ChatMessage>();
+            var fetchedMsgCount = 0;
+
             var res = await graphClient
                 .Teams[teamId]
                 .Channels[channelId]
@@ -57,13 +60,37 @@ public class TeamsRepository(
                     },
                     cancellationToken);
 
-            var messages = res?.Value ?? [];
+            // fetch all messages on channel
+            while (true)
+            {
+                if (res == null
+                    || string.IsNullOrEmpty(res.OdataNextLink)) break;
+
+                res = await graphClient
+                    .Teams[teamId]
+                    .Channels[channelId]
+                    .Messages
+                    .WithUrl(res.OdataNextLink)
+                    .GetAsync(
+                        reqCnfg =>
+                        {
+                            reqCnfg.QueryParameters.Top = 50; // 50 is max
+                        },
+                        cancellationToken);
+
+                allMessages.AddRange(res!.Value ?? []);
+                fetchedMsgCount += 50;
+
+                logger.LogInformation(
+                    "{fetchedMsgCount} Teams message fetched.",
+                    fetchedMsgCount);
+            }
 
             return new()
             {
                 IsSuccess = true,
                 StatusCode = 200,
-                Data = messages
+                Data = allMessages
             };
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

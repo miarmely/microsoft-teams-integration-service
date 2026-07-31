@@ -14,7 +14,7 @@ public sealed class MessageMediaRepository(
         MessageMedia media,
         CancellationToken cancellationToken = default)
     {
-        await dbCtx.MessageMedias.AddAsync(
+        await DbCtx.MessageMedias.AddAsync(
             media,
             cancellationToken);
     }
@@ -24,7 +24,7 @@ public sealed class MessageMediaRepository(
         string graphHostedContentId,
         CancellationToken cancellationToken = default)
     {
-        var msgMedia = await dbCtx.MessageMedias.SingleOrDefaultAsync(
+        var msgMedia = await DbCtx.MessageMedias.SingleOrDefaultAsync(
             m => m.TeamsMessageId == teamsMessageId
                 && m.GraphHostedContentId == graphHostedContentId,
             cancellationToken);

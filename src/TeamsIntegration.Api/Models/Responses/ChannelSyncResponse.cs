@@ -35,6 +35,6 @@ public sealed record ChannelSyncResponse
     /// <summary>
     /// List of message ids which their media synchronization failed.
     /// </summary>
-    public List<Guid> MessagesWhichMediaSyncFailed { get; init; }
+    public List<Guid> MessagesWhichMediaSyncFailed { get; init; } = [];
     public DateTimeOffset SynchronizedAt { get; init; }
 }
