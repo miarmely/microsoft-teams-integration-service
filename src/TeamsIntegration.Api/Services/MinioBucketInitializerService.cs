@@ -17,6 +17,7 @@ public sealed class MinioBucketInitializerService(
         CancellationToken cancellationToken = default)
     {
         const int maximumAttempts = 5;
+        const int delayInMs = 3000;
 
         for (var attempt = 1; attempt <= maximumAttempts; attempt += 1)
         {
@@ -30,6 +31,7 @@ public sealed class MinioBucketInitializerService(
                     bucketExistsArgs,
                     cancellationToken);
 
+                // create "bucket" on MinIO if not exists
                 if (!exists)
                 {
                     var makeBucketArgs = new MakeBucketArgs()
@@ -45,25 +47,35 @@ public sealed class MinioBucketInitializerService(
 
                     return;
                 }
+                else
+                {
+                    logger.LogInformation(
+                        "MinIO bucket already exists. (Bucket: {Bucket})",
+                        _minioOptions.BucketName);
+
+                    return;
+                }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 throw;
             }
-            catch (Exception ex) when (attempt < maximumAttempts)
+            catch (Exception ex)
             {
                 logger.LogWarning(
                     ex,
-                    "MinIO bucket initialization attempt failed. (Attempt: {Attempt}/{MaximumAttempts})",
+                    "MinIO bucket initialization attempt failed. (Attempt: {Attempt}/{MaximumAttempts}, Waiting: {Delay}sec)",
                     attempt,
-                    maximumAttempts);
+                    maximumAttempts,
+                    attempt * delayInMs / 1000);
 
-                await Task.Delay(
-                    TimeSpan.FromSeconds(3),
-                    cancellationToken);
+                if (attempt < maximumAttempts)
+                    await Task.Delay(
+                        TimeSpan.FromMilliseconds(delayInMs * attempt),  // 3sec, 6sec, 9sec, 12sec, 15sec...
+                        cancellationToken);
             }
-
-            throw new InvalidOperationException($"MinIO bucket '{_minioOptions.BucketName}' could not be initialized.");
         }
+
+        throw new InvalidOperationException($"MinIO bucket '{_minioOptions.BucketName}' could not be initialized.");
     }
 }

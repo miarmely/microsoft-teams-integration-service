@@ -11,10 +11,6 @@ public static class MinioExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.Configure<MinioOptions>(
-            configuration.GetSection(MinioOptions.SectionName));
-
-
         services
             .AddOptions<MinioOptions>()
             .Bind(configuration.GetSection(MinioOptions.SectionName))

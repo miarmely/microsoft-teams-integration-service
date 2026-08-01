@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using TeamsIntegration.Api.Data;
 using TeamsIntegration.Api.Extensions;
-using TeamsIntegration.Api.Services;
+using TeamsIntegration.Api.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +16,7 @@ builder.Services.AddMinio(builder.Configuration);
 
 var app = builder.Build();
 
-// auto impletement migrations to db (FOR PRODUCTION)
+// auto impletement "migrations" to db (FOR PRODUCTION)
 using (var scope = app.Services.CreateScope())
 {
     var dbCtx = scope.ServiceProvider.GetRequiredService<TeamsDbContext>();
@@ -24,9 +24,10 @@ using (var scope = app.Services.CreateScope())
     await dbCtx.Database.MigrateAsync();
 }
 
+// create "bucket" on MinIO if not exists
 using (var scope = app.Services.CreateScope())
 {
-    var bucketInitializer = scope.ServiceProvider.GetRequiredService<MinioBucketInitializerService>();
+    var bucketInitializer = scope.ServiceProvider.GetRequiredService<IMinioBucketInitializerService>();
 
     await bucketInitializer.InitializeAsync();
 }
@@ -57,7 +58,6 @@ if (builder.Configuration.GetValue<bool>("HttpsRedirection:Enabled"))
     app.UseHttpsRedirection();
 }
 
-app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

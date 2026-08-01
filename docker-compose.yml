@@ -20,7 +20,6 @@ services:
 
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
-      ASPNETCORE_URLS: http://+:8080
 
       ConnectionStrings__PostgreSQL: "Host=postgresql;Port=5432;Database=teams_integration;Username=postgres;Password=admin" 
 
@@ -92,7 +91,7 @@ services:
       test: [
         "CMD", 
         "curl",
-        "f",
+        "-f",
         "http://localhost:9000/minio/health/live"
       ]
       interval: 10s
