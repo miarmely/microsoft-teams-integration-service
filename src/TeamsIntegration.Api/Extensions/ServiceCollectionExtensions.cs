@@ -1,3 +1,4 @@
+using TeamsIntegration.Api.Logging.Queue;
 using TeamsIntegration.Api.Repositories;
 using TeamsIntegration.Api.Repositories.Interfaces;
 using TeamsIntegration.Api.Services;
@@ -23,6 +24,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMessageMediaService, MessageMediaService>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IObjectNameFactoryService, ObjectNameFactoryService>();
+        services.AddSingleton<ILogQueue, LogQueue>();
 
         return services;
     }

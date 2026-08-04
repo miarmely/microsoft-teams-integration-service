@@ -13,6 +13,8 @@ public sealed class TeamsDbContext(
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(TeamsDbContext).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(
+            typeof(TeamsDbContext).Assembly,
+            type => type.Namespace == "TeamsIntegration.Api.Data.Configurations");
     }
 }

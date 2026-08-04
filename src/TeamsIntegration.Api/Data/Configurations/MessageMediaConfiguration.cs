@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TeamsIntegration.Api.Entities;
 
-namespace TeamsIntegration.Api.Data.Configuration;
+namespace TeamsIntegration.Api.Data.Configurations;
 
 public sealed class MessageMediaConfiguration : IEntityTypeConfiguration<MessageMedia>
 {

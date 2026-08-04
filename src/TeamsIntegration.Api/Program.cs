@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using TeamsIntegration.Api.Data;
 using TeamsIntegration.Api.Extensions;
+using TeamsIntegration.Api.Logging.Database;
+using TeamsIntegration.Api.Logging.Extensions;
 using TeamsIntegration.Api.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,15 +15,20 @@ builder.Services.AddMicrosoftGraph(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwagger();
 builder.Services.AddMinio(builder.Configuration);
+builder.Services.AddDatabaseLogging(builder.Configuration);
+builder.Logging.AddFiltersFoDatabaseLogging();
 
 var app = builder.Build();
 
 // auto impletement "migrations" to db (FOR PRODUCTION)
 using (var scope = app.Services.CreateScope())
 {
-    var dbCtx = scope.ServiceProvider.GetRequiredService<TeamsDbContext>();
+    var teamsDbCtx = scope.ServiceProvider.GetRequiredService<TeamsDbContext>();
+    await teamsDbCtx.Database.MigrateAsync();
 
-    await dbCtx.Database.MigrateAsync();
+    var loggingDbCtxFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<LoggingDbContext>>();
+    await using var loggingDbCtx = await loggingDbCtxFactory.CreateDbContextAsync();
+    await loggingDbCtx.Database.MigrateAsync();
 }
 
 // create "bucket" on MinIO if not exists
