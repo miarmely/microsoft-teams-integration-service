@@ -38,7 +38,7 @@ public interface IMessageRepository : IBaseRepository
     /// <param name="channelId"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<IEnumerable<TeamsMessage>> GetByChannelAsync(
+    Task<List<TeamsMessage>> GetByChannelAsync(
         string teamId,
         string channelId,
         CancellationToken cancellationToken = default);

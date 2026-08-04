@@ -36,7 +36,7 @@ public sealed class MessageRepository(
         return msg;
     }
 
-    public async Task<IEnumerable<TeamsMessage>> GetByChannelAsync(
+    public async Task<List<TeamsMessage>> GetByChannelAsync(
         string teamId,
         string channelId,
         CancellationToken cancellationToken = default)
@@ -46,7 +46,7 @@ public sealed class MessageRepository(
             .Where(m => m.TeamId == teamId
                 && m.ChannelId == channelId)
             .OrderByDescending(m => m.MessageCreatedAt)
-            .ToArrayAsync(cancellationToken);
+            .ToListAsync(cancellationToken);
 
         return messages;
     }

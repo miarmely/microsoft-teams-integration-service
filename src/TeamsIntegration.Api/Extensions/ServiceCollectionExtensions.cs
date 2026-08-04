@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IObjectStorageService, MinioObjectStorageService>();
         services.AddScoped<IMessageMediaSynchronizationService, MessageMediaSynchronizationService>();
         services.AddScoped<IMinioBucketInitializerService, MinioBucketInitializerService>();
+        services.AddScoped<IMessageService, MessageService>();
 
         services.AddSingleton<IMessageMediaService, MessageMediaService>();
         services.AddSingleton(TimeProvider.System);

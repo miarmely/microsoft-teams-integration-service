@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace TeamsIntegration.Api.Entities;
 
 public sealed class MessageMedia
@@ -11,5 +13,7 @@ public sealed class MessageMedia
     public long SizeBytes { get; set; }
     public string? ETag { get; set; }
     public DateTimeOffset UploadedAt { get; set; }
+
+    [JsonIgnore]
     public TeamsMessage TeamsMessage { get; set; } = null!;
 }
