@@ -11,7 +11,6 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApplicationServices(
         this IServiceCollection services)
     {
-        services.AddScoped<ITeamsRepository, TeamsRepository>();
         services.AddScoped<IMessageRepository, MessageRepository>();
         services.AddScoped<IMessageMediaRepository, MessageMediaRepository>();
 
@@ -20,11 +19,17 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMessageMediaSynchronizationService, MessageMediaSynchronizationService>();
         services.AddScoped<IMinioBucketInitializerService, MinioBucketInitializerService>();
         services.AddScoped<IMessageService, MessageService>();
+        services.AddScoped<ITeamsService, TeamsService>();
 
         services.AddSingleton<IMessageMediaService, MessageMediaService>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IObjectNameFactoryService, ObjectNameFactoryService>();
         services.AddSingleton<ILogQueue, LogQueue>();
+
+        services.AddHttpClient<ITeamsRepository, TeamsRepository>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
 
         return services;
     }

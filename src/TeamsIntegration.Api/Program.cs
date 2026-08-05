@@ -16,6 +16,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwagger();
 builder.Services.AddMinio(builder.Configuration);
 builder.Services.AddDatabaseLogging(builder.Configuration);
+builder.Services.ConfigureMicrosoftTeams(builder.Configuration);
+
 builder.Logging.AddFiltersFoDatabaseLogging();
 
 var app = builder.Build();

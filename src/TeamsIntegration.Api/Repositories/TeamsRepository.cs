@@ -2,6 +2,8 @@ using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
 using Microsoft.Kiota.Abstractions;
+using TeamsIntegration.Api.Configuration;
+using TeamsIntegration.Api.Entities;
 using TeamsIntegration.Api.Mappings;
 using TeamsIntegration.Api.Models.Dtos;
 using TeamsIntegration.Api.Models.Responses;
@@ -11,7 +13,8 @@ namespace TeamsIntegration.Api.Repositories;
 
 public class TeamsRepository(
     GraphServiceClient graphClient,
-    ILogger<TeamsRepository> logger) : ITeamsRepository
+    ILogger<TeamsRepository> logger,
+    HttpClient httpClient) : ITeamsRepository
 {
     public async Task<IEnumerable<Team>> GetTeamsAsync(
         CancellationToken cancellationToken = default)
@@ -362,5 +365,18 @@ public class TeamsRepository(
                 ErrorMessage = "Unexpected server error."
             };
         }
+    }
+
+    public async Task SendMessageAsync(
+        string webhookUrl,
+        TeamsAdaptiveCard card,
+        CancellationToken cancellationToken = default)
+    {
+        using var res = await httpClient.PostAsJsonAsync(
+            webhookUrl,
+            card,
+            cancellationToken);
+
+        res.EnsureSuccessStatusCode();
     }
 }

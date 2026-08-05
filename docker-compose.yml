@@ -26,6 +26,8 @@ services:
       MicrosoftGraph__TenantId: ${GRAPH_TENANT_ID}
       MicrosoftGraph__ClientId: ${GRAPH_CLIENT_ID}
       MicrosoftGraph__ClientSecret: ${GRAPH_CLIENT_SECRET}
+      
+      MicrosoftTeams__WebhookUrl: ${WEBHOOK_URL}
 
       Minio__Endpoint: minio:9000
       Minio__AccessKey: teams-admin
