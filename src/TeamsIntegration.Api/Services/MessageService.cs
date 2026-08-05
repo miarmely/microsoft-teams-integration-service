@@ -9,7 +9,7 @@ public sealed class MessageService(
     IMessageRepository msgRepo,
     ILogger<MessageMediaService> logger) : IMessageService
 {
-    public async Task<ServiceResponse<List<TeamsMessage>>> GetMessagesFromDbAsync(
+    public async Task<ServiceResponse<IReadOnlyCollection<TeamsMessageResponse>>> GetMessagesFromDbAsync(
         string teamId,
         string channelId,
         CancellationToken cancellationToken = default)
@@ -54,7 +54,7 @@ public sealed class MessageService(
         {
             logger.LogError(
                 ex,
-                "Messages couldn't fetch from database (Team: {0}, Channel: {1})",
+                "Failed to retrieve synchronized messages from database (Team: {0}, Channel: {1})",
                 teamId,
                 channelId);
 
@@ -62,7 +62,7 @@ public sealed class MessageService(
             {
                 IsSuccess = false,
                 StatusCode = 500,
-                ErrorMessage = "Messages couldn't fetch from database."
+                ErrorMessage = "Synchronized Messages couldn't be retrieved from database."
             };
         }
     }

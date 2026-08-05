@@ -1,4 +1,5 @@
 using TeamsIntegration.Api.Entities;
+using TeamsIntegration.Api.Models.Responses;
 
 namespace TeamsIntegration.Api.Repositories.Interfaces;
 
@@ -38,7 +39,7 @@ public interface IMessageRepository : IBaseRepository
     /// <param name="channelId"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<List<TeamsMessage>> GetByChannelAsync(
+    Task<IReadOnlyCollection<TeamsMessageResponse>> GetByChannelAsync(
         string teamId,
         string channelId,
         CancellationToken cancellationToken = default);

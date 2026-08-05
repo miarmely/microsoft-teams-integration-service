@@ -5,7 +5,7 @@ namespace TeamsIntegration.Api.Services.Interfaces;
 
 public interface IMessageService
 {
-    Task<ServiceResponse<List<TeamsMessage>>> GetMessagesFromDbAsync(
+    Task<ServiceResponse<IReadOnlyCollection<TeamsMessageResponse>>> GetMessagesFromDbAsync(
         string teamId,
         string channelId,
         CancellationToken cancellationToken = default);
