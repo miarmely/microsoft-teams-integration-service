@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using TeamsIntegration.Api.Authorization;
 using TeamsIntegration.Api.Services.Interfaces;
 
 namespace TeamsIntegration.Api.Controllers;
@@ -9,6 +10,7 @@ public class TeamsSyncController(
     ITeamsSyncService teamsSyncService) : ControllerBase
 {
     [HttpPost("{teamId}/channels/{channelId}/sync")]
+    [HasPermission(TeamsIntegrationPermissions.SynchronizeChannel)]
     public async Task<IActionResult> SynchronizeChannel(
         [FromRoute] string teamId,
         [FromRoute] string channelId,

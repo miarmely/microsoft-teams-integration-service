@@ -20,7 +20,7 @@ public record ServiceResponse
 }
 
 
-public sealed record ServiceResponse<TData> : ServiceResponse
+public record ServiceResponse<TData> : ServiceResponse
 {
     public TData? Data { get; init; } = default;
 }

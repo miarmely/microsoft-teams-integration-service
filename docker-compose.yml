@@ -21,14 +21,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
 
-      ConnectionStrings__PostgreSQL: "Host=postgresql;Port=5432;Database=teams_integration;Username=postgres;Password=admin" 
-
       MicrosoftGraph__TenantId: ${GRAPH_TENANT_ID}
       MicrosoftGraph__ClientId: ${GRAPH_CLIENT_ID}
       MicrosoftGraph__ClientSecret: ${GRAPH_CLIENT_SECRET}
       
-      MicrosoftTeams__WebhookUrl: ${WEBHOOK_URL}
-
       Minio__Endpoint: minio:9000
       Minio__AccessKey: teams-admin
       Minio__SecretKey: teams-password
@@ -36,8 +32,23 @@ services:
       Minio__UseSsl: "false"
       Minio__PresignedUrlExpirationDay: "7"
 
+      AccessHub__BaseUrl: ${ACCESSHUB_BASE_URL}
+      AccessHub__ApplicationId: "4"
+      AccessHub__ClientId: erp-api-client
+      AccessHub__ApiKey: ${ACCESSHUB_API_KEY}
+      AccessHub__Jwt__SecretKey: ${ACCESSHUB_JWT_SECRET_KEY}
+      AccessHub__Jwt__Algorithm: HS256
+      AccessHub__Jwt__PermissionClaimType: permission
+      AccessHub__Jwt__ValidateIssuer: "false"
+      AccessHub__Jwt__ValidateAudience: "false"
+      AccessHub__Jwt__ClockSkewSeconds: "30"
+
       HttpsRedirection__Enabled: "false"
 
+      ConnectionStrings__PostgreSQL: "Host=postgresql;Port=5432;Database=teams_integration;Username=postgres;Password=admin" 
+      
+      MicrosoftTeams__WebhookUrl: ${WEBHOOK_URL}
+      
     networks:
       - teams-network
 
