@@ -1,16 +1,17 @@
-namespace TeamsIntegration.Api.Authorization;
+namespace TeamsIntegration.Api.Authorization.Models;
 
 /// <summary>
-/// Available permissions for "Teams Integration Service" project.
+/// All available permissions for "Teams Integration Service" project. 
+/// It uses with "[Authorize]" attibute on controllers.
 /// </summary>
 public static class TeamsIntegrationPermissions
 {
-    public const string ViewMessage = "teams.messages.view";
+    public const string ViewMessages = "teams.messages.view";
     public const string SynchronizeChannel = "teams.channels.sync";
     public const string SendMessage = "teams.messages.send";
 
     public static readonly IReadOnlyCollection<string> All = [
-        ViewMessage,
+        ViewMessages,
         SynchronizeChannel,
         SendMessage
     ];

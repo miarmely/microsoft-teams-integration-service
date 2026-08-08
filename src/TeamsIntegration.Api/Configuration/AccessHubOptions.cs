@@ -8,6 +8,7 @@ public sealed class AccessHubOptions
     public required string ClientId { get; init; }
     public required string ApiKey { get; init; }
     public required AccessHubJwtOptions Jwt { get; init; }
+    public string ApiKeyHeaderName { get; init; } = "X-API-Key";
 }
 
 public sealed class AccessHubJwtOptions

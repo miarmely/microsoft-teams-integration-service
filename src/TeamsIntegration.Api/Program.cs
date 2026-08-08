@@ -4,6 +4,7 @@ using TeamsIntegration.Api.Data;
 using TeamsIntegration.Api.Extensions;
 using TeamsIntegration.Api.Logging.Database;
 using TeamsIntegration.Api.Logging.Extensions;
+using TeamsIntegration.Api.Services;
 using TeamsIntegration.Api.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,7 +18,7 @@ builder.Services.AddSwagger();
 builder.Services.AddMinio(builder.Configuration);
 builder.Services.AddDatabaseLogging(builder.Configuration);
 builder.Services.ConfigureMicrosoftTeams(builder.Configuration);
-builder.Services.AddAccessHubAuthorization(builder.Configuration);
+builder.Services.SetupAccessHubAuthorization(builder.Configuration);
 
 builder.Logging.AddFiltersFoDatabaseLogging();
 
@@ -40,6 +41,14 @@ using (var scope = app.Services.CreateScope())
     var bucketInitializer = scope.ServiceProvider.GetRequiredService<IMinioBucketInitializerService>();
 
     await bucketInitializer.InitializeAsync();
+}
+
+// synchronize "permissions" of "Teams Integration Service" on "AccessHub"
+using (var scope = app.Services.CreateScope())
+{
+    var accessHubInitializer = scope.ServiceProvider.GetRequiredService<AccessHubPermissionInitializerService>();
+
+    await accessHubInitializer.InitializeAsync();
 }
 
 // Configure the HTTP request pipeline.

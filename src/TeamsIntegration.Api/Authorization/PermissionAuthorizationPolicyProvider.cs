@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 namespace TeamsIntegration.Api.Authorization;
 
 /// <summary>
-/// Create custom policies for "[Authorize]" attribute on controllers.
+/// Creates "authorization policy" for policy names starts with "Permission:" 
 /// </summary>
 /// <param name="authOpts"></param>
 public sealed class PermissionAuthorizationPolicyProvider(
@@ -15,22 +15,29 @@ public sealed class PermissionAuthorizationPolicyProvider(
     public override Task<AuthorizationPolicy?> GetPolicyAsync(
         string policyName)
     {
-        // check policy whether starts "PolicyPrefix"
-        if (!policyName.StartsWith(PolicyPrefix, StringComparison.OrdinalIgnoreCase))
+        var isExpectingPolicy = policyName.StartsWith(
+            PolicyPrefix,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (isExpectingPolicy)
+        {
+            var permission = policyName[PolicyPrefix.Length..];
+
+            // if there are no info after "PolicyPrefix" (EX: "Permission:")
+            if (string.IsNullOrWhiteSpace(permission))
+                return Task.FromResult<AuthorizationPolicy?>(null);
+
+            // create policy dynamically
+            var policy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .AddRequirements(new PermissionAuthorizationRequirement(permission, "21"))
+                .Build();
+
+            return Task.FromResult<AuthorizationPolicy?>(policy);
+        }
+
+        // if "policy" starts with another prefix
+        else
             return base.GetPolicyAsync(policyName);
-
-        // if there are no info after prefix (EX: "Permission:")
-        var permission = policyName[PolicyPrefix.Length..];
-
-        if (string.IsNullOrWhiteSpace(permission))
-            return Task.FromResult<AuthorizationPolicy?>(null);
-
-        // create policy dynamically
-        var policy = new AuthorizationPolicyBuilder()
-            .RequireAuthenticatedUser()
-            .AddRequirements(new PermissionRequirement(permission))
-            .Build();
-
-        return Task.FromResult<AuthorizationPolicy?>(policy);
     }
 }

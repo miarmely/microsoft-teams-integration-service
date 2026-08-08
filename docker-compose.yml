@@ -36,11 +36,14 @@ services:
       AccessHub__ApplicationId: "4"
       AccessHub__ClientId: erp-api-client
       AccessHub__ApiKey: ${ACCESSHUB_API_KEY}
+      AccessHub__ApiKeyHeaderName: "X-API-Key"
       AccessHub__Jwt__SecretKey: ${ACCESSHUB_JWT_SECRET_KEY}
       AccessHub__Jwt__Algorithm: HS256
       AccessHub__Jwt__PermissionClaimType: permission
-      AccessHub__Jwt__ValidateIssuer: "false"
-      AccessHub__Jwt__ValidateAudience: "false"
+      AccessHub__Jwt__ValidateIssuer: true
+      AccessHub__Jwt__Issuer: ${ACCESSHUB_JWT_ISSUER}
+      AccessHub__Jwt__ValidateAudience: true
+      AccessHub__Jwt__Audience: ${ACCESSHUB_JWT_AUDIENCE}
       AccessHub__Jwt__ClockSkewSeconds: "30"
 
       HttpsRedirection__Enabled: "false"

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using TeamsIntegration.Api.Authorization;
+using TeamsIntegration.Api.Authorization.Attributes;
+using TeamsIntegration.Api.Authorization.Models;
 using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Services.Interfaces;
 

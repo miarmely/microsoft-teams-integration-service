@@ -1,15 +1,30 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using TeamsIntegration.Api.Authorization;
 using TeamsIntegration.Api.Authorization.Models;
 using TeamsIntegration.Api.Configuration;
+using TeamsIntegration.Api.Repositories;
+using TeamsIntegration.Api.Repositories.Interfaces;
+using TeamsIntegration.Api.Services;
+using TeamsIntegration.Api.Services.Interfaces;
 
 namespace TeamsIntegration.Api.Extensions;
 
 public static class AccessHubExtensions
 {
+    public static IServiceCollection SetupAccessHubAuthorization(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        AddAccessHubAuthorization(services, configuration);
+        AddAccessHubServices(services);
+
+        return services;
+    }
+
     public static IServiceCollection AddAccessHubAuthorization(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -42,12 +57,12 @@ public static class AccessHubExtensions
         var accessHubOpts = configuration
             .GetRequiredSection(AccessHubOptions.SectionName)
             .Get<AccessHubOptions>()
-            ?? throw new InvalidOperationException("Access Hub configuration couldn't be loaded.");
+            ?? throw new InvalidOperationException("Access Hub configuration couldn't be loaded. (Extension Func: AddAccessHubAuthorization)");
 
         var signingKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(accessHubOpts.Jwt.SecretKey));
 
-        // set "JWT Bearer" authentication
+        // add "JWT Bearer" authentication
         services
             .AddAuthentication(opts =>
             {
@@ -137,9 +152,40 @@ public static class AccessHubExtensions
                 };
             });
 
-        services.AddAuthorization();
+        // protect all enpoints even if they don't have "[Authorize]" attribute. (FALLBACK-POLICY)
+        services.AddAuthorization(opts =>
+        {
+            opts.FallbackPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
+        });
+
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
         services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddAccessHubServices(
+        this IServiceCollection services)
+    {
+        services.AddHttpClient<IAccessHubRepository, AccessHubRepository>((serviceProvider, client) =>
+       {
+           var accessHubOpts = serviceProvider
+               .GetRequiredService<IOptions<AccessHubOptions>>()
+               .Value;
+
+           client.BaseAddress = new Uri(accessHubOpts.BaseUrl);
+           client.Timeout = TimeSpan.FromSeconds(15);
+
+           if (!string.IsNullOrWhiteSpace(accessHubOpts.ApiKey))
+               client.DefaultRequestHeaders.Add(
+                   accessHubOpts.ApiKeyHeaderName,
+                   accessHubOpts.ApiKey);
+       });
+
+        services.AddScoped<IAccessHubService, AccessHubService>();
+        services.AddScoped<AccessHubPermissionInitializerService>();
 
         return services;
     }

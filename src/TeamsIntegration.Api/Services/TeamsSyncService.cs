@@ -1,5 +1,4 @@
 using System.Data.Common;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql;
 using TeamsIntegration.Api.Entities;
 using TeamsIntegration.Api.Mappings;
@@ -74,7 +73,7 @@ public sealed partial class TeamsSyncService(
             };
 
 
-        /////////////// STEP 2) synchronize messages and message medias
+        /////////////// STEP 2) synchronize messages and message medias (EXCEPTION SAFE)
         var mediaSynchronizationItems = new List<(TeamsMessage Message, string[] HostedContentIds)>();
         var insertedCount = 0;
         var updatedCount = 0;
@@ -83,7 +82,7 @@ public sealed partial class TeamsSyncService(
         var failedMessageCount = 0;
         var utcNow = timeProvider.GetUtcNow();
 
-        // synchronize messages
+        // synchronize "messages" (EXCEPTION SAFE)
         foreach (var msg in teamsMessages)
         {
             TeamsMessage? processedEntity = null;
@@ -187,7 +186,7 @@ public sealed partial class TeamsSyncService(
             }
         }
 
-        // synchronize medias of messages
+        // synchronize "medias of messages" (EXCEPTION SAFE)
         var messagesWhichMediaSyncFailed = new List<Guid>();
         var synchronizedMedias = new List<MessageMedia>();
 

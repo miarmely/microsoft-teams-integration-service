@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 
-namespace TeamsIntegration.Api.Authorization;
+namespace TeamsIntegration.Api.Authorization.Attributes;
 
 /// <summary>
-/// For simply long "[Authorize]" attributes on controllers.
+/// For simplify long "[Authorize]" attributes on controllers.
 /// </summary>
 public sealed class HasPermissionAttribute : AuthorizeAttribute
 {

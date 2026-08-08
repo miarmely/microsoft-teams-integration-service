@@ -6,19 +6,19 @@ using TeamsIntegration.Api.Configuration;
 namespace TeamsIntegration.Api.Authorization;
 
 /// <summary>
-/// Adjust authorization method of "Authorize" attributes on controllers.
+/// It checks whether "PermissionAuthorizationRequirements" requirement is met.
 /// </summary>
 /// <param name="accessHubOpts"></param>
 /// <param name="logger"></param>
 public sealed class PermissionAuthorizationHandler(
     IOptions<AccessHubOptions> accessHubOpts,
-    ILogger<PermissionAuthorizationHandler> logger) : AuthorizationHandler<PermissionRequirement>
+    ILogger<PermissionAuthorizationHandler> logger) : AuthorizationHandler<PermissionAuthorizationRequirement>
 {
     private readonly AccessHubOptions _accessHubOpts = accessHubOpts.Value;
 
     protected override Task HandleRequirementAsync(
         AuthorizationHandlerContext ctx,
-        PermissionRequirement requirement)
+        PermissionAuthorizationRequirement requirement)
     {
         // validate whether user has authenticated
         if (ctx.User.Identity?.IsAuthenticated != true)
@@ -34,10 +34,16 @@ public sealed class PermissionAuthorizationHandler(
             ctx.Succeed(requirement);
 
         else
+        {
+            var userId = ctx.User.FindFirst("sub")?.Value
+                ?? ctx.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? "unknown";
+
             logger.LogWarning(
-                "Authenticated user doesn't have the required permission. {Permission: {0}, User: {1}}",
-                requirement.Permission,
-                ctx.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "unknown");
+                "Authenticated user doesn't have the required permission. (User: {0}, Permission: {1})",
+                userId,
+                requirement.Permission);
+        }
 
         return Task.CompletedTask;
     }
