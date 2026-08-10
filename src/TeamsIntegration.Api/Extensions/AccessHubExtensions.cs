@@ -43,6 +43,9 @@ public static class AccessHubExtensions
                 opts => !string.IsNullOrWhiteSpace(opts.ClientId),
                 "'AccessHub:ClientId' is required.")
             .Validate(
+                opts => !string.IsNullOrWhiteSpace(opts.ApiKey),
+                "'AccessHub:ApiKey' is required.")
+            .Validate(
                 opts => !string.IsNullOrWhiteSpace(opts.Jwt.SecretKey),
                 "'AccessHub:Jwt:SecretKey' is required.")
             .Validate(
@@ -170,19 +173,22 @@ public static class AccessHubExtensions
         this IServiceCollection services)
     {
         services.AddHttpClient<IAccessHubRepository, AccessHubRepository>((serviceProvider, client) =>
-       {
-           var accessHubOpts = serviceProvider
-               .GetRequiredService<IOptions<AccessHubOptions>>()
-               .Value;
+        {
+            // set default options of http client
+            var accessHubOpts = serviceProvider
+                .GetRequiredService<IOptions<AccessHubOptions>>()
+                .Value;
 
-           client.BaseAddress = new Uri(accessHubOpts.BaseUrl);
-           client.Timeout = TimeSpan.FromSeconds(15);
+            client.BaseAddress = new Uri(accessHubOpts.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(15);
 
-           if (!string.IsNullOrWhiteSpace(accessHubOpts.ApiKey))
-               client.DefaultRequestHeaders.Add(
-                   accessHubOpts.ApiKeyHeaderName,
-                   accessHubOpts.ApiKey);
-       });
+            // add "api key" to request header
+            if (!string.IsNullOrWhiteSpace(accessHubOpts.ApiKey))
+                if (!client.DefaultRequestHeaders.TryAddWithoutValidation(
+                    accessHubOpts.ApiKeyHeaderName,
+                    accessHubOpts.ApiKey))
+                    throw new InvalidOperationException("AccessHub:ApiKey couldn't add to headers.");
+        });
 
         services.AddScoped<IAccessHubService, AccessHubService>();
         services.AddScoped<AccessHubPermissionInitializerService>();

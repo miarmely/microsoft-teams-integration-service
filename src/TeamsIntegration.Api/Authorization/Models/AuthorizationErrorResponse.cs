@@ -11,5 +11,5 @@ public sealed record AuthorizationErrorResponse : ServiceResponse<AuthorizationE
 
 public sealed record AuthorizationErrorDetails
 {
-    public string TraceId { get; init; }
+    public string? TraceId { get; init; }
 }

@@ -34,8 +34,35 @@ public partial class AccessHubPermissionInitializerService(
                     return;
                 }
 
+                // if status codes has "..." don't attempt to retry, (BREAK LOOP)
+                else
+                    switch (res.StatusCode)
+                    {
+                        case StatusCodes.Status400BadRequest:
+                        case StatusCodes.Status401Unauthorized:
+                        case StatusCodes.Status404NotFound:
+                            return;
+                    }
+
+                // wait before next attempt
+                if (attempt < maxAttempts)
+                {
+                    var delay = retryDelays[attempt - 1];
+
+                    logger.LogWarning(
+                        "AccessHub permission initialization failed. Retrying in {DelaySeconds} seconds. " +
+                        "(Attempt: {Attempt}/{MaxAttempts}, " +
+                        "StatusCode: {StatusCode})",
+                        delay.TotalSeconds,
+                        attempt,
+                        maxAttempts,
+                        res.StatusCode);
+
+                    await Task.Delay(delay, cancellationToken);
+                }
+
                 // if all retries failed
-                if (attempt != maxAttempts)
+                else
                 {
                     logger.LogError(
                         "AccessHub permission initialization permanently failed" +
@@ -46,21 +73,9 @@ public partial class AccessHubPermissionInitializerService(
                         maxAttempts,
                         res.StatusCode,
                         res.ErrorMessage);
+
+                    return;
                 }
-
-                // wait before next attempt
-                var delay = retryDelays[attempt - 1];
-
-                logger.LogWarning(
-                    "AccessHub permission initialization failed. Retrying in {DelaySeconds} seconds. " +
-                    "(Attempt: {Attempt}/{MaxAttempts}, " +
-                    "StatusCode: {StatusCode})",
-                    delay.TotalSeconds,
-                    attempt,
-                    maxAttempts,
-                    res.StatusCode);
-
-                await Task.Delay(delay, cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
