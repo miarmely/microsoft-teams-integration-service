@@ -1,16 +1,17 @@
 using System.Net;
-using Microsoft.Extensions.Options;
-using TeamsIntegration.Api.Configuration;
+using Microsoft.Graph.Models;
 using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Repositories.Interfaces;
+using TeamsIntegration.Api.Services.Interfaces;
 
 namespace TeamsIntegration.Api.Repositories;
 
-public sealed partial class AccessHubRepository
+public sealed partial class AccessHubRepository(
+    HttpClient httpClient,
+    IAccessHubTokenProvider tokenProvider,
+    ILogger<AccessHubRepository> logger) : IAccessHubRepository
 {
-    private readonly AccessHubOptions _accessHubOpts = accessHubOpts.Value;
-
     public static int MapStatusCode(HttpStatusCode statusCode)
     {
         return statusCode switch
@@ -26,54 +27,8 @@ public sealed partial class AccessHubRepository
     }
 }
 
-public sealed partial class AccessHubRepository(
-    HttpClient httpClient,
-    IOptions<AccessHubOptions> accessHubOpts,
-    ILogger<AccessHubRepository> logger) : IAccessHubRepository
+public sealed partial class AccessHubRepository
 {
-
-
-    public async Task CreatePermissionsAsync(
-        IReadOnlyCollection<AccessHubPermissionRequest> permissions,
-        CancellationToken cancellationToken = default)
-    {
-        await httpClient.PostAsJsonAsync(
-            "/api/permissions/batch/if-not-exists",
-            permissions,
-            cancellationToken);
-    }
-
-    public async Task<IReadOnlyCollection<AccessHubPermissionResponse>> GetPermissionsAsync(
-        CancellationToken cancellationToken = default)
-    {
-        var res = await httpClient.GetFromJsonAsync<List<AccessHubPermissionResponse>>(
-            "/api/permissions",
-            cancellationToken) ?? [];
-
-        return res;
-    }
-
-    public async Task<IReadOnlyCollection<AccessHubPermissionResponse>> GetPermissionsOfUserAsync(
-        Guid userId,
-        CancellationToken cancellationToken = default)
-    {
-        var res = await httpClient.GetFromJsonAsync<List<AccessHubPermissionResponse>>(
-            $"/api/permissions/user/{Uri.EscapeDataString(userId.ToString())}",
-            cancellationToken) ?? [];
-
-        return res;
-    }
-
-    public async Task<IReadOnlyCollection<AccessHubPermissionResponse>> GetPermissionsOfCurrentUserAsync(
-        CancellationToken cancellationToken = default)
-    {
-        var res = await httpClient.GetFromJsonAsync<List<AccessHubPermissionResponse>>(
-            "/api/permissions/me",
-            cancellationToken) ?? [];
-
-        return res;
-    }
-
     public async Task<ServiceResponse<AccessHubPermissionSyncResponse>> SynchronizePermissionAsync(
         int applicationId,
         IReadOnlyCollection<AccessHubPermissionRequest> permissions,
@@ -86,6 +41,19 @@ public sealed partial class AccessHubRepository(
                 $"/api/applications/{applicationId}/permissions/batch",
                 permissions,
                 cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                tokenProvider.InvalidateToken();
+                logger.LogWarning("AccessHub rejected permission synchronization with 401.");
+
+                return new()
+                {
+                    IsSuccess = false,
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    ErrorMessage = "AccesssHub authentication failed."
+                };
+            }
 
             if (!response.IsSuccessStatusCode)
             {
@@ -134,18 +102,17 @@ public sealed partial class AccessHubRepository(
         {
             throw;
         }
-        catch (TaskCanceledException ex)
+        catch (HttpRequestException ex)
         {
-            logger.LogWarning(
-                ex,
-                "AccessHub permission synchronization timed out."
-            );
+            logger.LogError(
+               ex,
+               "HTTP error occurred while communicating with AccessHub.");
 
             return new()
             {
                 IsSuccess = false,
                 StatusCode = StatusCodes.Status503ServiceUnavailable,
-                ErrorMessage = "AccessHub is currently unavaialble."
+                ErrorMessage = "AccessHub is unavailable."
             };
         }
         catch (Exception ex)
@@ -159,6 +126,77 @@ public sealed partial class AccessHubRepository(
                 IsSuccess = false,
                 StatusCode = StatusCodes.Status500InternalServerError,
                 ErrorMessage = "Unexpected AccessHub synchronization error."
+            };
+        }
+    }
+
+    public async Task<ServiceResponse<AccessHubLoginResponse>> LoginAsync(
+        AccessHubLoginRequest req,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var res = await httpClient.PostAsJsonAsync(
+                "/api/auth/login",
+                req,
+                cancellationToken);
+
+            if (!res.IsSuccessStatusCode)
+                return new()
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)res.StatusCode,
+                    ErrorMessage = res.StatusCode == HttpStatusCode.Unauthorized ?
+                        "Invalid username or password"
+                        : "AccessHub authentication failed."
+                };
+
+            var loginRes = await res.Content.ReadFromJsonAsync<AccessHubLoginResponse>(
+                cancellationToken);
+
+            if (loginRes == null)
+                return new()
+                {
+                    IsSuccess = false,
+                    StatusCode = StatusCodes.Status502BadGateway,
+                    ErrorMessage = "AccessHub returned an invalid response."
+                };
+
+            return new()
+            {
+                IsSuccess = true,
+                StatusCode = StatusCodes.Status200OK,
+                Data = loginRes
+            };
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(
+                ex,
+                "AccessHub authentication request failed.");
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status503ServiceUnavailable,
+                ErrorMessage = "Authentication service is unavailable."
+            };
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Unexpected error during AccessHub authentication.");
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status500InternalServerError,
+                ErrorMessage = "An unexpected authentication error occured."
             };
         }
     }

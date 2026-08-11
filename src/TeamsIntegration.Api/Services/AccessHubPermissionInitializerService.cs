@@ -40,7 +40,15 @@ public partial class AccessHubPermissionInitializerService(
                     {
                         case StatusCodes.Status400BadRequest:
                         case StatusCodes.Status401Unauthorized:
+                        case StatusCodes.Status403Forbidden:
                         case StatusCodes.Status404NotFound:
+                            logger.LogError(
+                                "AccessHub permission initialization failed with a non-transient status code. " +
+                                "(StatusCode: {StatusCode}, " +
+                                "Error: {Error})",
+                                res.StatusCode,
+                                res.ErrorMessage);
+
                             return;
                     }
 

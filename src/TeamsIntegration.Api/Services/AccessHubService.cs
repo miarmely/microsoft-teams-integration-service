@@ -9,10 +9,10 @@ namespace TeamsIntegration.Api.Services;
 
 public sealed class AccessHubService(
     IAccessHubRepository accessHubRepo,
-    IOptions<AccessHubOptions> accessHubOpts,
+    IOptions<AccessHubOptionsForBasicAuth> accessHubOpts,
     ILogger<AccessHubService> logger) : IAccessHubService
 {
-    private readonly AccessHubOptions _accessHubOpts = accessHubOpts.Value;
+    private readonly AccessHubOptionsForBasicAuth _accessHubOpts = accessHubOpts.Value;
 
     public async Task<ServiceResponse> SynchronizePermissionsAsync(
         CancellationToken cancellationToken)

@@ -29,10 +29,10 @@ public static class AccessHubExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // bind "AcccessHubOptions" model
+        // bind "AccessHubOptions" model
         services
-            .AddOptions<AccessHubOptions>()
-            .Bind(configuration.GetSection(AccessHubOptions.SectionName))
+            .AddOptions<AccessHubOptionsForBasicAuth>()
+            .Bind(configuration.GetSection(IAccessHubOptions.SectionName))
             .Validate(
                 opts => Uri.TryCreate(opts.BaseUrl, UriKind.Absolute, out _),
                 "'AccessHub:BaseUrl' must be valid absolute URL.")
@@ -43,8 +43,14 @@ public static class AccessHubExtensions
                 opts => !string.IsNullOrWhiteSpace(opts.ClientId),
                 "'AccessHub:ClientId' is required.")
             .Validate(
-                opts => !string.IsNullOrWhiteSpace(opts.ApiKey),
+                opts => !string.IsNullOrWhiteSpace(opts.Username),
                 "'AccessHub:ApiKey' is required.")
+            .Validate(
+                opts => !string.IsNullOrWhiteSpace(opts.Username),
+                "'AccessHub:Username' is required.")
+            .Validate(
+                opts => !string.IsNullOrWhiteSpace(opts.Password),
+                "'AccessHub:Password' is required.")
             .Validate(
                 opts => !string.IsNullOrWhiteSpace(opts.Jwt.SecretKey),
                 "'AccessHub:Jwt:SecretKey' is required.")
@@ -58,8 +64,8 @@ public static class AccessHubExtensions
 
         // set "signing key"
         var accessHubOpts = configuration
-            .GetRequiredSection(AccessHubOptions.SectionName)
-            .Get<AccessHubOptions>()
+            .GetRequiredSection(IAccessHubOptions.SectionName)
+            .Get<AccessHubOptionsForBasicAuth>()
             ?? throw new InvalidOperationException("Access Hub configuration couldn't be loaded. (Extension Func: AddAccessHubAuthorization)");
 
         var signingKey = new SymmetricSecurityKey(
@@ -172,26 +178,36 @@ public static class AccessHubExtensions
     public static IServiceCollection AddAccessHubServices(
         this IServiceCollection services)
     {
-        services.AddHttpClient<IAccessHubRepository, AccessHubRepository>((serviceProvider, client) =>
+        // its for "HttpClientFactory" in "AccessHubTokenProvider"
+        services.AddHttpClient("AccessHubAuthentication", (serviceProvider, client) =>
         {
             // set default options of http client
             var accessHubOpts = serviceProvider
-                .GetRequiredService<IOptions<AccessHubOptions>>()
+                .GetRequiredService<IOptions<AccessHubOptionsForBasicAuth>>()
                 .Value;
 
             client.BaseAddress = new Uri(accessHubOpts.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(15);
-
-            // add "api key" to request header
-            if (!string.IsNullOrWhiteSpace(accessHubOpts.ApiKey))
-                if (!client.DefaultRequestHeaders.TryAddWithoutValidation(
-                    accessHubOpts.ApiKeyHeaderName,
-                    accessHubOpts.ApiKey))
-                    throw new InvalidOperationException("AccessHub:ApiKey couldn't add to headers.");
         });
+
+        // its for "HttpClient in "AccessHubRepository"
+        services.AddHttpClient<IAccessHubRepository, AccessHubRepository>((serviceProvider, client) =>
+        {
+            var options = serviceProvider
+                .GetRequiredService<IOptions<AccessHubOptionsForBasicAuth>>()
+                .Value;
+
+            client.BaseAddress = new Uri(options.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(15);
+        })
+    .AddHttpMessageHandler<
+        AccessHubBearerTokenHandler>();
 
         services.AddScoped<IAccessHubService, AccessHubService>();
         services.AddScoped<AccessHubPermissionInitializerService>();
+
+        services.AddSingleton<IAccessHubTokenProvider, AccessHubTokenProvider>();
+        services.AddTransient<AccessHubBearerTokenHandler>();
 
         return services;
     }

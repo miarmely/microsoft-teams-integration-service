@@ -18,6 +18,9 @@ services:
     
     restart: unless-stopped
 
+    volumes:
+      - teams-data-protection:/root/.aspnet/DataProtection-Keys
+
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
 
@@ -33,10 +36,11 @@ services:
       Minio__PresignedUrlExpirationDay: "7"
 
       AccessHub__BaseUrl: ${ACCESSHUB_BASE_URL}
-      AccessHub__ApplicationId: "4"
-      AccessHub__ClientId: erp-api-client
-      AccessHub__ApiKey: ${ACCESSHUB_API_KEY}
-      AccessHub__ApiKeyHeaderName: "X-API-Key"
+      AccessHub__ApplicationId: ${ACCESSHUB_APPLICATION_ID}
+      AccessHub__ClientId: ${ACCESSHUB_CLIENT_ID}
+      AccessHub__Username: ${ACCESSHUB_USERNAME}
+      AccessHub__Password: ${ACCESSHUB_PASSWORD}
+
       AccessHub__Jwt__SecretKey: ${ACCESSHUB_JWT_SECRET_KEY}
       AccessHub__Jwt__Algorithm: HS256
       AccessHub__Jwt__PermissionClaimType: permission
@@ -121,6 +125,7 @@ services:
 volumes:
   teams-postgres-data:
   teams-minio-data:
+  teams-data-protection:
 
 networks:
   teams-network:

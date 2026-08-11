@@ -1,9 +1,19 @@
 namespace TeamsIntegration.Api.Configuration;
 
+public interface IAccessHubOptions
+{
+    const string SectionName = "AccessHub";
+    string BaseUrl { get; init; }
+    int ApplicationId { get; init; }
+    string ClientId { get; init; }
+    AccessHubJwtOptions Jwt { get; init; }
+}
+
+
 /// <summary>
 /// Model for "Api-Key" authentication which you can use "Api-Key" so you don't need to username and password credentials.
 /// </summary>
-public sealed class AccessHubOptions
+public sealed class AccessHubOptionsForKeyAuth : IAccessHubOptions
 {
     public const string SectionName = "AccessHub";
     public required string BaseUrl { get; init; }
@@ -14,10 +24,11 @@ public sealed class AccessHubOptions
     public string ApiKeyHeaderName { get; init; } = "X-API-Key";
 }
 
+
 /// <summary>
 /// Model for basic authentication which you have to write "username" and "password".
 /// </summary>
-public sealed class AccessHubOptionsForBasicAuth
+public sealed class AccessHubOptionsForBasicAuth : IAccessHubOptions
 {
     public const string SectionName = "AccessHub";
     public required string BaseUrl { get; init; }
@@ -27,6 +38,7 @@ public sealed class AccessHubOptionsForBasicAuth
     public required string Password { get; init; }
     public required AccessHubJwtOptions Jwt { get; init; }
 }
+
 
 public sealed class AccessHubJwtOptions
 {

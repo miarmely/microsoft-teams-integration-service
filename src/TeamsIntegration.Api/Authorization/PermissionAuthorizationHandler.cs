@@ -11,10 +11,10 @@ namespace TeamsIntegration.Api.Authorization;
 /// <param name="accessHubOpts"></param>
 /// <param name="logger"></param>
 public sealed class PermissionAuthorizationHandler(
-    IOptions<AccessHubOptions> accessHubOpts,
+    IOptions<AccessHubOptionsForBasicAuth> accessHubOpts,
     ILogger<PermissionAuthorizationHandler> logger) : AuthorizationHandler<PermissionAuthorizationRequirement>
 {
-    private readonly AccessHubOptions _accessHubOpts = accessHubOpts.Value;
+    private readonly AccessHubOptionsForBasicAuth _accessHubOpts = accessHubOpts.Value;
 
     protected override Task HandleRequirementAsync(
         AuthorizationHandlerContext ctx,
