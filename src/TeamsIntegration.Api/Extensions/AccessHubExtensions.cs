@@ -191,17 +191,17 @@ public static class AccessHubExtensions
         });
 
         // its for "HttpClient in "AccessHubRepository"
-        services.AddHttpClient<IAccessHubRepository, AccessHubRepository>((serviceProvider, client) =>
-        {
-            var options = serviceProvider
-                .GetRequiredService<IOptions<AccessHubOptionsForBasicAuth>>()
-                .Value;
+        services
+            .AddHttpClient<IAccessHubRepository, AccessHubRepository>((serviceProvider, client) =>
+            {
+                var options = serviceProvider
+                    .GetRequiredService<IOptions<AccessHubOptionsForBasicAuth>>()
+                    .Value;
 
-            client.BaseAddress = new Uri(options.BaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(15);
-        })
-    .AddHttpMessageHandler<
-        AccessHubBearerTokenHandler>();
+                client.BaseAddress = new Uri(options.BaseUrl);
+                client.Timeout = TimeSpan.FromSeconds(15);
+            })
+            .AddHttpMessageHandler<AccessHubBearerTokenHandler>();
 
         services.AddScoped<IAccessHubService, AccessHubService>();
         services.AddScoped<AccessHubPermissionInitializerService>();

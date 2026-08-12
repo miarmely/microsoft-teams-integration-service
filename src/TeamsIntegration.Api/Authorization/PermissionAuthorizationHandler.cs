@@ -43,6 +43,10 @@ public sealed class PermissionAuthorizationHandler(
                 "Authenticated user doesn't have the required permission. (User: {0}, Permission: {1})",
                 userId,
                 requirement.Permission);
+
+            logger.LogDebug(
+                "Authenticated user claims: {Claims}",
+                string.Join(", ", ctx.User.Claims.Select(c => $"{c.Type}={c.Value}")));
         }
 
         return Task.CompletedTask;

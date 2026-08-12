@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using TeamsIntegration.Api.Authorization;
 using TeamsIntegration.Api.Configuration;
+using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Repositories.Interfaces;
 using TeamsIntegration.Api.Services.Interfaces;
@@ -13,6 +14,44 @@ public sealed class AccessHubService(
     ILogger<AccessHubService> logger) : IAccessHubService
 {
     private readonly AccessHubOptionsForBasicAuth _accessHubOpts = accessHubOpts.Value;
+
+    public async Task<ServiceResponse<LoginResponse>> LoginAsync(
+        LoginRequest req,
+        CancellationToken cancellationToken)
+    {
+        var loginRes = await accessHubRepo.LoginAsync(
+            new AccessHubLoginRequest
+            {
+                ClientId = _accessHubOpts.ClientId,
+                Username = req.Username,
+                Password = req.Password
+            },
+            cancellationToken);
+
+        if (!loginRes.IsSuccess)
+        {
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = loginRes.StatusCode,
+                ErrorMessage = loginRes.ErrorMessage
+            };
+        }
+
+        var data = loginRes.Data!;
+
+        return new()
+        {
+            IsSuccess = true,
+            StatusCode = StatusCodes.Status200OK,
+            Data = new LoginResponse
+            {
+                AccessToken = data.AccessToken,
+                RefreshToken = data.RefreshToken,
+                ExpiresIn = data.ExpiresIn
+            }
+        };
+    }
 
     public async Task<ServiceResponse> SynchronizePermissionsAsync(
         CancellationToken cancellationToken)

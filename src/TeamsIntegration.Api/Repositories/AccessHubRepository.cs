@@ -9,6 +9,7 @@ namespace TeamsIntegration.Api.Repositories;
 
 public sealed partial class AccessHubRepository(
     HttpClient httpClient,
+    IHttpClientFactory httpClientFactory,
     IAccessHubTokenProvider tokenProvider,
     ILogger<AccessHubRepository> logger) : IAccessHubRepository
 {
@@ -136,7 +137,9 @@ public sealed partial class AccessHubRepository
     {
         try
         {
-            using var res = await httpClient.PostAsJsonAsync(
+            var authClient = httpClientFactory.CreateClient("AccessHubAuthentication");
+
+            using var res = await authClient.PostAsJsonAsync(
                 "/api/auth/login",
                 req,
                 cancellationToken);
