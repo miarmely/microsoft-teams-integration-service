@@ -88,6 +88,4 @@ app.Run();
     BNS Uretim:
     Team Id: 1560909e-d5c6-4695-a367-853e9beae2ff
     Channel Id: 19:z-xYxl8ZP388iVnmiFk9mKQHT48_bmLqIqZmhv1ubkM1@thread.tacv2
-
-    http://localhost:8080/api/TeamsSync/1560909e-d5c6-4695-a367-853e9beae2ff/channels/19:z-xYxl8ZP388iVnmiFk9mKQHT48_bmLqIqZmhv1ubkM1@thread.tacv2/sync?fromDate=2026-07-25T00:00:00Z
 */
