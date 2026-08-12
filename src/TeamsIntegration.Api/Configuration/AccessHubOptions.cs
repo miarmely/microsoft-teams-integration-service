@@ -45,6 +45,7 @@ public sealed class AccessHubJwtOptions
     public required string SecretKey { get; init; }
     public string Algorithm { get; init; } = "HS256";
     public string PermissionClaimType { get; init; } = "permission";
+    public string SuperAdminClaimType { get; init; } = "is_super_admin";
     public bool ValidateIssuer { get; init; }
     public string? Issuer { get; init; }
     public bool ValidateAudience { get; init; }

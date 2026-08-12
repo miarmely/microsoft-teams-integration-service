@@ -24,30 +24,38 @@ public sealed class PermissionAuthorizationHandler(
         if (ctx.User.Identity?.IsAuthenticated != true)
             return Task.CompletedTask;
 
-        // check user whether has required role
+        // if user "super-admin" (BYPASS PERMISSONS CHECKS)
+        if (ctx.User.HasClaim(_accessHubOpts.Jwt.SuperAdminClaimType, "true"))
+        {
+            ctx.Succeed(requirement);
+            return Task.CompletedTask;
+        }
+
+        // check user whether has required "permissions"
         var permissionClaimType = _accessHubOpts.Jwt.PermissionClaimType;
         var hasPermission = ctx.User.Claims.Any(c =>
             c.Type.Equals(permissionClaimType, StringComparison.OrdinalIgnoreCase)
             && c.Value.Equals(requirement.Permission, StringComparison.OrdinalIgnoreCase));
 
         if (hasPermission)
-            ctx.Succeed(requirement);
-
-        else
         {
-            var userId = ctx.User.FindFirst("sub")?.Value
-                ?? ctx.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                ?? "unknown";
-
-            logger.LogWarning(
-                "Authenticated user doesn't have the required permission. (User: {0}, Permission: {1})",
-                userId,
-                requirement.Permission);
-
-            logger.LogDebug(
-                "Authenticated user claims: {Claims}",
-                string.Join(", ", ctx.User.Claims.Select(c => $"{c.Type}={c.Value}")));
+            ctx.Succeed(requirement);
+            return Task.CompletedTask;
         }
+
+        // if user hasn't required permissions (WRITE LOGS)
+        var userId = ctx.User.FindFirst("sub")?.Value
+            ?? ctx.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? "unknown";
+
+        logger.LogWarning(
+            "Authenticated user doesn't have the required permission. (User: {0}, Permission: {1})",
+            userId,
+            requirement.Permission);
+
+        logger.LogDebug(
+            "Authenticated user claims: {Claims}",
+            string.Join(", ", ctx.User.Claims.Select(c => $"{c.Type}={c.Value}")));
 
         return Task.CompletedTask;
     }
