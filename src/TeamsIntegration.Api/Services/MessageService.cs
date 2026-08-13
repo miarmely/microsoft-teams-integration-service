@@ -1,4 +1,3 @@
-using TeamsIntegration.Api.Entities;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Repositories.Interfaces;
 using TeamsIntegration.Api.Services.Interfaces;
@@ -12,6 +11,8 @@ public sealed class MessageService(
     public async Task<ServiceResponse<IReadOnlyCollection<TeamsMessageResponse>>> GetMessagesFromDbAsync(
         string teamId,
         string channelId,
+        int pageNumber = 1,
+        int? pageSize = null,
         CancellationToken cancellationToken = default)
     {
         // validate parameters
@@ -37,6 +38,8 @@ public sealed class MessageService(
             var messages = await msgRepo.GetByChannelAsync(
                 teamId,
                 channelId,
+                pageNumber,
+                pageSize,
                 cancellationToken);
 
             return new()

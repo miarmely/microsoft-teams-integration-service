@@ -8,5 +8,7 @@ public interface IMessageService
     Task<ServiceResponse<IReadOnlyCollection<TeamsMessageResponse>>> GetMessagesFromDbAsync(
         string teamId,
         string channelId,
+        int pageNumber = 1,
+        int? pageSize = null,
         CancellationToken cancellationToken = default);
 }

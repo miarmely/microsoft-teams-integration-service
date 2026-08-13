@@ -15,11 +15,15 @@ public class MessageController(
     public async Task<IActionResult> GetMessagesFromDb(
         [FromRoute] string teamId,
         [FromRoute] string channelId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int? pageSize = null,
         CancellationToken cancellationToken = default)
     {
         var res = await msgService.GetMessagesFromDbAsync(
             teamId,
             channelId,
+            pageNumber,
+            pageSize,
             cancellationToken);
 
         return StatusCode(res.StatusCode, res);

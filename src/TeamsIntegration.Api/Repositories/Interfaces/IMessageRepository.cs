@@ -42,5 +42,7 @@ public interface IMessageRepository : IBaseRepository
     Task<IReadOnlyCollection<TeamsMessageResponse>> GetByChannelAsync(
         string teamId,
         string channelId,
+        int pageNumber = 1,
+        int? pageSize = null,
         CancellationToken cancellationToken = default);
 }

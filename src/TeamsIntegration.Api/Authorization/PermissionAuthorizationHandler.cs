@@ -49,7 +49,7 @@ public sealed class PermissionAuthorizationHandler(
             ?? "unknown";
 
         logger.LogWarning(
-            "Authenticated user doesn't have the required permission. (User: {0}, Permission: {1})",
+            "Authenticated user doesn't have the required permission. (User: {UserId}, Permission: {PermissionId})",
             userId,
             requirement.Permission);
 

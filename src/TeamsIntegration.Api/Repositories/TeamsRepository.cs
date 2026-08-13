@@ -2,7 +2,6 @@ using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
 using Microsoft.Kiota.Abstractions;
-using TeamsIntegration.Api.Configuration;
 using TeamsIntegration.Api.Entities;
 using TeamsIntegration.Api.Mappings;
 using TeamsIntegration.Api.Models.Dtos;
@@ -16,32 +15,174 @@ public class TeamsRepository(
     ILogger<TeamsRepository> logger,
     HttpClient httpClient) : ITeamsRepository
 {
-    public async Task<IEnumerable<Team>> GetTeamsAsync(
+    public async Task<ServiceResponse<IEnumerable<Team>>> GetTeamsAsync(
         CancellationToken cancellationToken = default)
     {
-        var res = await graphClient
-            .Teams
-            .GetAsync(cancellationToken: cancellationToken);
+        try
+        {
+            var res = await graphClient
+                .Teams
+                .GetAsync(cancellationToken: cancellationToken);
 
-        var teams = res?.Value ?? [];
+            var teams = res?.Value ?? [];
 
-        return teams;
+            return teams;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            logger.LogInformation("Fetching teams was cancelled. (by cancellation token)");
+
+            throw;
+        }
+        catch (ODataError err)  // graph api errors
+        {
+            var graphStatusCode = GraphStatusCodeMapper.Map(err.ResponseStatusCode);
+
+            logger.LogWarning(
+                err,
+                "Microsoft Graph rejected the 'teams fetching' request. (StatusCode: {StatusCode}, Message: {ErrorMsg})",
+                graphStatusCode,
+                err.Error?.Message ?? "Unknown Error");
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = graphStatusCode,
+                ErrorMessage = "Microsoft Graph rejected the 'teams fetching' request."
+            };
+        }
+        catch (HttpRequestException err)  // network errors
+        {
+            logger.LogError(
+                err,
+                "'Network error' occurred while fetching Teams.");
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = err.StatusCode != null ? (int)err.StatusCode : StatusCodes.Status503ServiceUnavailable,
+                ErrorMessage = "Network error occurred while fetching Teams."
+            };
+        }
+        catch (ApiException err)  // Microsoft Graph SDK errors
+        {
+            logger.LogError(
+                err,
+                "Microsoft Graph SDK error occurred while fetching Teams channels. (StatusCode: {StatusCode})",
+                err.ResponseStatusCode);
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = err.ResponseStatusCode,
+                ErrorMessage = "Microsoft Graph SDK error occurred while fetching Teams channels"
+            };
+        }
+        catch (Exception err)  // unexpected errors
+        {
+            logger.LogError(
+                err,
+                "Unexpected error while fetching Teams channels.");
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = 500,
+                ErrorMessage = "Unexpected error while fetching Teams channels."
+            };
+        }
     }
 
-    public async Task<IEnumerable<Channel>> GetChannelsAsync(
+    public async Task<ServiceResponse<IEnumerable<Channel>>> GetChannelsAsync(
         string teamId,
         CancellationToken cancellationToken = default)
     {
-        var res = await graphClient
-            .Teams[teamId]
-            .Channels
-            .GetAsync(cancellationToken: cancellationToken);
+        try
+        {
+            var res = await graphClient
+                .Teams[teamId]
+                .Channels
+                .GetAsync(cancellationToken: cancellationToken);
 
-        var channels = res?.Value ?? [];
+            var channels = res?.Value ?? [];
 
-        return channels;
+            return new()
+            {
+                IsSuccess = true,
+                StatusCode = 200,
+                Data = channels
+            };
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            logger.LogInformation(
+                "Fetching Teams channels was cancelled. (by cancellation token) (Team: {TeamId})",
+                teamId);
+
+            throw;
+        }
+        catch (ODataError err)  // graph api errors
+        {
+            var graphStatusCode = GraphStatusCodeMapper.Map(err.ResponseStatusCode);
+
+            logger.LogWarning(
+                err,
+                "Microsoft Graph rejected the 'channels fetching' request. (Team: {TeamId}, StatusCode: {StatusCode}, Message: {ErrorMsg})",
+                teamId,
+                graphStatusCode,
+                err.Error?.Message ?? "Unknown Error");
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = graphStatusCode,
+                ErrorMessage = "Microsoft Graph rejected the 'channels fetching' request."
+            };
+        }
+        catch (HttpRequestException err)  // network errors
+        {
+            logger.LogError(
+                err,
+                "'Network error' occurred while fetching Teams channels. (Team: {TeamId})",
+                teamId);
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = err.StatusCode != null ? (int)err.StatusCode : StatusCodes.Status503ServiceUnavailable,
+                ErrorMessage = "Network error occurred while fetching Teams channels."
+            };
+        }
+        catch (ApiException err)  // Microsoft Graph SDK errors
+        {
+            logger.LogError(
+                err,
+                "Microsoft Graph SDK error occurred while fetching Teams channels. (Team: {TeamId}, StatusCode: {StatusCode})",
+                teamId,
+                err.ResponseStatusCode);
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = err.ResponseStatusCode,
+                ErrorMessage = "Microsoft Graph SDK error occurred while fetching Teams channels"
+            };
+        }
+        catch (Exception err)  // unexpected errors
+        {
+            logger.LogError(
+                err,
+                "Unexpected error while fetching Teams channels. (Team: {TeamId})",
+                teamId);
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = 500,
+                ErrorMessage = "Unexpected error while fetching Teams channels."
+            };
+        }
     }
-
 
     public async Task<ServiceResponse<IEnumerable<ChatMessage>>> GetMessagesAsync(
         string teamId,
@@ -181,7 +322,7 @@ public class TeamsRepository(
             {
                 IsSuccess = false,
                 StatusCode = err.ResponseStatusCode,
-                ErrorMessage = "Microsoft Graph could not process the request."
+                ErrorMessage = "Microsoft Graph SDK error occurred while fetching Teams messages."
             };
         }
         catch (Exception err)  // unexpected errors
@@ -196,7 +337,7 @@ public class TeamsRepository(
             {
                 IsSuccess = false,
                 StatusCode = 500,
-                ErrorMessage = "Unexpected server error."
+                ErrorMessage = "Unexpected error while fetching Teams messages."
             };
         }
     }

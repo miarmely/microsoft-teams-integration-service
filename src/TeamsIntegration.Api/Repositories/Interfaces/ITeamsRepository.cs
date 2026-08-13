@@ -13,7 +13,7 @@ public interface ITeamsRepository
     Task<IEnumerable<Team>> GetTeamsAsync(
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<Channel>> GetChannelsAsync(
+    Task<ServiceResponse<IEnumerable<Channel>>> GetChannelsAsync(
         string teamId,
         CancellationToken cancellationToken = default);
 

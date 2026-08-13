@@ -40,13 +40,43 @@ public sealed class MessageRepository(
     public async Task<IReadOnlyCollection<TeamsMessageResponse>> GetByChannelAsync(
         string teamId,
         string channelId,
+        int pageNumber = 1,
+        int? pageSize = null,
         CancellationToken cancellationToken = default)
     {
-        var messages = await DbCtx.TeamsMessages
-            .AsNoTracking()
-            .Where(m => m.TeamId == teamId
-                && m.ChannelId == channelId)
-            .OrderByDescending(m => m.MessageCreatedAt)
+        var rawMessages = new List<TeamsMessage>();
+
+        // if messages by pagination
+        if (pageSize != null
+            && pageSize > 0)
+        {
+            int _pageSize = (int)pageSize;
+            var skip = (pageNumber - 1) * _pageSize;
+
+            rawMessages = await DbCtx.TeamsMessages
+                .AsNoTracking()
+                .Where(m => m.TeamId == teamId
+                    && m.ChannelId == channelId)
+                .OrderByDescending(m => m.MessageCreatedAt)
+                .ThenByDescending(m => m.Id)
+                .Skip(skip)
+                .Take(_pageSize)
+                .ToListAsync(cancellationToken);
+        }
+
+        // get all messages
+        else
+        {
+            rawMessages = await DbCtx.TeamsMessages
+                .AsNoTracking()
+                .Where(m => m.TeamId == teamId
+                    && m.ChannelId == channelId)
+                .OrderByDescending(m => m.MessageCreatedAt)
+                .ThenByDescending(m => m.Id)
+                .ToListAsync(cancellationToken);
+        }
+
+        var messages = rawMessages
             .Select(message => new TeamsMessageResponse
             {
                 Id = message.Id,
@@ -81,7 +111,7 @@ public sealed class MessageRepository(
                     })
                     .ToList()
             })
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return messages;
     }
