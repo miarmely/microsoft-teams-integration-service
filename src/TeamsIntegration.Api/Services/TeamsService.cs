@@ -1,6 +1,11 @@
+
+using System.Data;
 using Microsoft.Extensions.Options;
+using Microsoft.Graph.Models;
+using Microsoft.Kiota.Abstractions;
 using TeamsIntegration.Api.Configuration;
 using TeamsIntegration.Api.Entities;
+using TeamsIntegration.Api.Models.Dtos;
 using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Repositories.Interfaces;
@@ -91,7 +96,7 @@ public sealed class TeamsService(
             {
                 logger.LogWarning(
                     ex,
-                    "Failed sending message to Teams Channel. (Team: {0}, Channel: {1})",
+                    "Failed sending message to Teams Channel. (Team: {TeamId}, Channel: {ChannelId})",
                     req.TeamId,
                     req.ChannelId);
 
@@ -109,5 +114,194 @@ public sealed class TeamsService(
                 MessagesFailedWhenSending = messagesFailedWhenSending
             }
         };
+    }
+
+    public async Task<ServiceResponse<IReadOnlyCollection<TeamResponse>>> GetTeamsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // get teams (EXCEPTION-SAFE)
+        var res = await teamsRepo.GetTeamsAsync(cancellationToken);
+
+        if (!res.IsSuccess)
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = res.StatusCode,
+                ErrorMessage = res.ErrorMessage
+            };
+
+        var teams = res.Data?
+            .Where(team => team.Id != null)
+            .Select(team => new TeamResponse
+            {
+                Id = team.Id!,
+                DisplayName = team.DisplayName,
+                Description = team.Description
+            })
+            .OrderBy(team => team.DisplayName)
+            .ToList();
+
+        return new()
+        {
+            IsSuccess = true,
+            StatusCode = 200,
+            Data = teams
+        };
+    }
+
+    public async Task<ServiceResponse<ChannelResponse>> GetChannelsAync(
+        string teamId,
+        CancellationToken cancellationToken = default)
+    {
+        // parameter validations
+        if (string.IsNullOrEmpty(teamId))
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = 400,
+                ErrorMessage = "'teamId' cannot be empty."
+            };
+
+        // get channels (EXCEPTION-SAFE)
+        var res = await teamsRepo.GetChannelsAsync(
+            teamId,
+            cancellationToken);
+
+        if (!res.IsSuccess)
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = res.StatusCode,
+                ErrorMessage = res.ErrorMessage
+            };
+
+        var channels = res.Data ?? [];
+        var channelRes = new ChannelResponse
+        {
+            Channels = channels
+        };
+
+        return new()
+        {
+            IsSuccess = true,
+            StatusCode = 200,
+            Data = channelRes
+        };
+    }
+
+    public async Task<ServiceResponse<TeamAndChannelsResponse>> GetTeamAndChannelsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // get all teams (EXCEPTION-SAFE)
+        var teamRes = await GetTeamsAsync(cancellationToken);
+
+        if (!teamRes.IsSuccess)
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = teamRes.StatusCode,
+                ErrorMessage = teamRes.ErrorMessage
+            };
+
+        var teams = teamRes.Data ?? [];
+        var data = new TeamAndChannelsResponse()
+        {
+            FetchedTeamsCount = teams.Count
+        };
+
+        if (teams.Count <= 0)
+            return new()
+            {
+                IsSuccess = true,
+                StatusCode = 200,
+                Data = data
+            };
+
+        // fetch "channels" of all "teams" (EXCEPTION-SAFE)
+        foreach (var team in teams)
+        {
+            var channelRes = await teamsRepo.GetChannelsAsync(
+                team.Id,
+                cancellationToken);
+
+            if (!channelRes.IsSuccess)
+            {
+                logger.LogWarning(
+                    "Failed fetching channels of the team. (Team: {TeamId})",
+                    team.Id);
+
+                data.FailedTeamsCount++;
+            }
+
+            var channels = channelRes.Data ?? [];
+            var teamAndChannels = new TeamAndChannelsDto()
+            {
+                Team = team,
+                Channels = channels
+            };
+
+            data.TeamsAndChannels.Add(teamAndChannels);
+        }
+
+        return new()
+        {
+            IsSuccess = true,
+            StatusCode = 200,
+            Data = data
+        };
+    }
+
+    public async Task<ServiceResponse<IEnumerable<ChatMessage>>> GetMessagesAsync(
+        string teamId,
+        string channelId,
+        DateTimeOffset fromDate,
+        DateTimeOffset? toDate = null,
+        int pageNumber = 1,
+        int? pageSize = null,
+        CancellationToken cancellationToken = default)
+    {
+        // get messages
+        var res = await teamsRepo.GetMessagesAsync(
+            teamId,
+            channelId,
+            fromDate,
+            toDate ?? DateTimeOffset.MaxValue,  // if null, fetch until today
+            cancellationToken: cancellationToken);
+
+        if (!res.IsSuccess)
+            return new()
+            {
+                IsSuccess = true,
+                StatusCode = res.StatusCode,
+                ErrorMessage = res.ErrorMessage
+            };
+
+        var messages = res.Data ?? [];
+
+        if (pageSize > 0
+            && pageNumber >= 1)
+        {
+            var skip = (pageNumber - 1) * (int)pageSize;
+            var paginedMessages = messages
+                .Skip(skip)
+                .Take((int)pageSize);
+
+            return new()
+            {
+                IsSuccess = true,
+                StatusCode = 200,
+                Data = paginedMessages
+            };
+        }
+
+        else
+        {
+            return new()
+            {
+                IsSuccess = true,
+                StatusCode = 200,
+                Data = messages
+            };
+        }
     }
 }

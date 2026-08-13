@@ -10,15 +10,26 @@ namespace TeamsIntegration.Api.Repositories.Interfaces;
 /// </summary>
 public interface ITeamsRepository
 {
-    Task<IEnumerable<Team>> GetTeamsAsync(
+    /// <summary>
+    /// EXCEPTION-SAFE
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<ServiceResponse<IReadOnlyCollection<Team>>> GetTeamsAsync(
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResponse<IEnumerable<Channel>>> GetChannelsAsync(
+    /// <summary>
+    /// EXCEPTION-SAFE
+    /// </summary>
+    /// <param name="teamId"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<ServiceResponse<IReadOnlyCollection<ChannelDto>>> GetChannelsAsync(
         string teamId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Fetch messages from Microsoft Teams.
+    /// Fetch messages from Microsoft Teams. (EXCEPTION-SAFE)
     /// </summary>
     /// <param name="teamId"></param>
     /// <param name="channelId"></param>
@@ -41,6 +52,15 @@ public interface ITeamsRepository
         string messageId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// EXCEPTION-SAFE
+    /// </summary>
+    /// <param name="teamId"></param>
+    /// <param name="channelId"></param>
+    /// <param name="messageId"></param>
+    /// <param name="hostedContentId"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     Task<ServiceResponse<MediaContent>> GetHostedContentAsync(
         string teamId,
         string channelId,

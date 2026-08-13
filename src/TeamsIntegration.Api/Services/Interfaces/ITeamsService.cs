@@ -1,3 +1,4 @@
+using Microsoft.Graph.Models;
 using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Models.Responses;
 
@@ -7,5 +8,24 @@ public interface ITeamsService
 {
     Task<ServiceResponse<MessageSendResponse>> SendMessageToChannelAsync(
         TeamsSendMultipleMessageRequest req,
+        CancellationToken cancellationToken = default);
+
+    Task<ServiceResponse<IReadOnlyCollection<TeamResponse>>> GetTeamsAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<ServiceResponse<ChannelResponse>> GetChannelsAync(
+        string teamId,
+        CancellationToken cancellationToken = default);
+
+    Task<ServiceResponse<TeamAndChannelsResponse>> GetTeamAndChannelsAsync(
+       CancellationToken cancellationToken = default);
+
+    Task<ServiceResponse<IEnumerable<ChatMessage>>> GetMessagesAsync(
+        string teamId,
+        string channelId,
+        DateTimeOffset fromDate,
+        DateTimeOffset? toDate = null,
+        int pageNumber = 1,
+        int? pageSize = null,
         CancellationToken cancellationToken = default);
 }

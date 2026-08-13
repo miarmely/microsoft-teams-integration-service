@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 3,
   "targets": {
     "net9.0": {
       "Azure.Core/1.50.0": {
@@ -4598,19 +4598,19 @@
     ]
   },
   "packageFolders": {
-    "/Users/macintosh/.nuget/packages/": {}
+    "C:\\Users\\user\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/TeamsIntegration.Api.csproj",
+      "projectUniqueName": "C:\\Users\\user\\Desktop\\ARCHIEVE\\Software\\MKS DevO\\teams-integration-service\\src\\TeamsIntegration.Api\\TeamsIntegration.Api.csproj",
       "projectName": "TeamsIntegration.Api",
-      "projectPath": "/Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/TeamsIntegration.Api.csproj",
-      "packagesPath": "/Users/macintosh/.nuget/packages/",
-      "outputPath": "/Users/macintosh/Desktop/Workspace/MKS DEVO/teams-integration-service/src/TeamsIntegration.Api/obj/",
+      "projectPath": "C:\\Users\\user\\Desktop\\ARCHIEVE\\Software\\MKS DevO\\teams-integration-service\\src\\TeamsIntegration.Api\\TeamsIntegration.Api.csproj",
+      "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\user\\Desktop\\ARCHIEVE\\Software\\MKS DevO\\teams-integration-service\\src\\TeamsIntegration.Api\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/Users/macintosh/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
@@ -4620,7 +4620,6 @@
       },
       "frameworks": {
         "net9.0": {
-          "framework": "net9.0",
           "targetAlias": "net9.0",
           "projectReferences": {}
         }
@@ -4635,11 +4634,10 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "10.0.300"
+      "SdkAnalysisLevel": "9.0.300"
     },
     "frameworks": {
       "net9.0": {
-        "framework": "net9.0",
         "targetAlias": "net9.0",
         "dependencies": {
           "Azure.Identity": {
@@ -4696,7 +4694,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.300/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.317/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

@@ -15,7 +15,7 @@ public class TeamsRepository(
     ILogger<TeamsRepository> logger,
     HttpClient httpClient) : ITeamsRepository
 {
-    public async Task<ServiceResponse<IEnumerable<Team>>> GetTeamsAsync(
+    public async Task<ServiceResponse<IReadOnlyCollection<Team>>> GetTeamsAsync(
         CancellationToken cancellationToken = default)
     {
         try
@@ -26,7 +26,12 @@ public class TeamsRepository(
 
             var teams = res?.Value ?? [];
 
-            return teams;
+            return new()
+            {
+                IsSuccess = true,
+                StatusCode = 200,
+                Data = teams
+            };
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -68,32 +73,32 @@ public class TeamsRepository(
         {
             logger.LogError(
                 err,
-                "Microsoft Graph SDK error occurred while fetching Teams channels. (StatusCode: {StatusCode})",
+                "Microsoft Graph SDK error occurred while fetching Teams. (StatusCode: {StatusCode})",
                 err.ResponseStatusCode);
 
             return new()
             {
                 IsSuccess = false,
                 StatusCode = err.ResponseStatusCode,
-                ErrorMessage = "Microsoft Graph SDK error occurred while fetching Teams channels"
+                ErrorMessage = "Microsoft Graph SDK error occurred while fetching Teams"
             };
         }
         catch (Exception err)  // unexpected errors
         {
             logger.LogError(
                 err,
-                "Unexpected error while fetching Teams channels.");
+                "Unexpected error while fetching Teams.");
 
             return new()
             {
                 IsSuccess = false,
                 StatusCode = 500,
-                ErrorMessage = "Unexpected error while fetching Teams channels."
+                ErrorMessage = "Unexpected error while fetching Teams."
             };
         }
     }
 
-    public async Task<ServiceResponse<IEnumerable<Channel>>> GetChannelsAsync(
+    public async Task<ServiceResponse<IReadOnlyCollection<ChannelDto>>> GetChannelsAsync(
         string teamId,
         CancellationToken cancellationToken = default)
     {
@@ -104,7 +109,17 @@ public class TeamsRepository(
                 .Channels
                 .GetAsync(cancellationToken: cancellationToken);
 
-            var channels = res?.Value ?? [];
+            var channels = (res?.Value ?? [])
+                 .Select(channel => new ChannelDto
+                 {
+                     Id = channel.Id,
+                     DisplayName = channel.DisplayName,
+                     Description = channel.Description,
+                     MembershipType = channel.MembershipType.ToString(),
+                     WebUrl = channel.WebUrl
+                 })
+                .OrderBy(channel => channel.Description)
+                .ToList();
 
             return new()
             {
@@ -236,7 +251,7 @@ public class TeamsRepository(
                 totalFetchedMsgCount += fetchedMsgCountPerPage;
 
                 logger.LogInformation(
-                    "{FetchedMsgCount} messages fetched, {FilteredMsgCount} messages matched with filters, {totalFetchedPageCount} page fetched.",
+                    "{FetchedMsgCount} messages fetched, {FilteredMsgCount} messages on page matched with filters, {totalFetchedPageCount} page fetched.",
                     totalFetchedMsgCount,
                     messagesOnPageFiltered.Length,
                     totalFetchedPageCount);
