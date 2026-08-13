@@ -15,6 +15,7 @@ namespace TeamsIntegration.Api.Services;
 
 public sealed class TeamsService(
     ITeamsRepository teamsRepo,
+    IMessageMediaService messageMediaService,
     IOptions<MicrosoftTeamsOptions> teamsOpts,
     ILogger<TeamsService> logger) : ITeamsService
 {
@@ -276,32 +277,75 @@ public sealed class TeamsService(
                 ErrorMessage = res.ErrorMessage
             };
 
+        // do/don't pagination
         var messages = res.Data ?? [];
+        IEnumerable<ChatMessage> selectedMessages;
 
         if (pageSize > 0
             && pageNumber >= 1)
         {
             var skip = (pageNumber - 1) * (int)pageSize;
-            var paginedMessages = messages
+            selectedMessages = messages
                 .Skip(skip)
                 .Take((int)pageSize);
-
-            return new()
-            {
-                IsSuccess = true,
-                StatusCode = 200,
-                Data = paginedMessages
-            };
         }
-
         else
         {
-            return new()
-            {
-                IsSuccess = true,
-                StatusCode = 200,
-                Data = messages
-            };
+            selectedMessages = messages;
         }
+
+        var messagesWithAttachments = selectedMessages.ToArray();
+
+        foreach (var message in messagesWithAttachments)
+        {
+            if (string.IsNullOrWhiteSpace(message.Id))
+                continue;
+
+            var hostedContentIds = messageMediaService
+                .ExtractImages(
+                    message.Body?.Content,
+                    teamId,
+                    channelId,
+                    message.Id)
+                .Select(image => image.Id)
+                .ToArray();
+
+            if (hostedContentIds.Length == 0)
+            {
+                message.HostedContents = [];
+                continue;
+            }
+
+            try
+            {
+                message.HostedContents = (await teamsRepo.GetHostedContentsAsync(
+                    teamId,
+                    channelId,
+                    message.Id,
+                    cancellationToken)).ToList();
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "Failed fetching attachments of a Teams message. (Team: {TeamId}, Channel: {ChannelId}, Message: {MessageId})",
+                    teamId,
+                    channelId,
+                    message.Id);
+
+                message.HostedContents = [];
+            }
+        }
+
+        return new()
+        {
+            IsSuccess = true,
+            StatusCode = 200,
+            Data = messagesWithAttachments
+        };
     }
 }
