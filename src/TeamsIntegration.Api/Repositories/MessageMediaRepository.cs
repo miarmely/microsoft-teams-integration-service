@@ -10,6 +10,17 @@ public sealed class MessageMediaRepository(
     ILogger<MessageMediaRepository> logger)
     : BaseRepository<MessageMediaRepository>(dbCtx, logger), IMessageMediaRepository
 {
+    public Task<MessageMedia?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        return DbCtx.MessageMedias
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                media => media.Id == id,
+                cancellationToken);
+    }
+
     public async Task AddAsync(
         MessageMedia media,
         CancellationToken cancellationToken = default)

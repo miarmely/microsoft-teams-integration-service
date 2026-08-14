@@ -8,6 +8,10 @@ namespace TeamsIntegration.Api.Repositories.Interfaces;
 /// </summary>
 public interface IMessageMediaRepository : IBaseRepository
 {
+    Task<MessageMedia?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
     Task<MessageMedia?> GetByTeamsMessageAndHostedContentIdAsync(
         Guid teamsMessageId,
         string graphHostedContentId,

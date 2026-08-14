@@ -84,4 +84,30 @@ public class TeamsController(
 
         return StatusCode(res.StatusCode, res);
     }
+
+
+    [HttpGet("{teamId}/channels/{channelId}/messages/{messageId}/media/{hostedContentId}")]
+    [HasPermission(TeamsIntegrationPermissions.ViewMessages)]
+    public async Task<IActionResult> GetMessageMedia(
+        [FromRoute] string teamId,
+        [FromRoute] string channelId,
+        [FromRoute] string messageId,
+        [FromRoute] string hostedContentId,
+        CancellationToken cancellationToken = default)
+    {
+        var res = await teamsService.GetMessageMediaAsync(
+            teamId,
+            channelId,
+            messageId,
+            hostedContentId,
+            cancellationToken);
+
+        if (!res.IsSuccess || res.Data is null)
+            return StatusCode(res.StatusCode, res);
+
+        return File(
+            res.Data.Content,
+            res.Data.ContentType,
+            res.Data.FileName);
+    }
 }

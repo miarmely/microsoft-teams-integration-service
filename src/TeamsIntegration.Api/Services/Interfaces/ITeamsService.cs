@@ -1,11 +1,19 @@
 using Microsoft.Graph.Models;
 using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Models.Responses;
+using TeamsIntegration.Api.Models.Dtos;
 
 namespace TeamsIntegration.Api.Services.Interfaces;
 
 public interface ITeamsService
 {
+    Task<ServiceResponse<MediaContent>> GetMessageMediaAsync(
+        string teamId,
+        string channelId,
+        string messageId,
+        string hostedContentId,
+        CancellationToken cancellationToken = default);
+
     Task<ServiceResponse<MessageSendResponse>> SendMessageToChannelAsync(
         TeamsSendMultipleMessageRequest req,
         CancellationToken cancellationToken = default);

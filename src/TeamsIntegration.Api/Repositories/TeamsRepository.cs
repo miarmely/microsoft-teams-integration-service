@@ -7,6 +7,7 @@ using TeamsIntegration.Api.Mappings;
 using TeamsIntegration.Api.Models.Dtos;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Repositories.Interfaces;
+using TeamsIntegration.Api.Utilities;
 
 namespace TeamsIntegration.Api.Repositories;
 
@@ -436,16 +437,33 @@ public class TeamsRepository(
                 };
             }
 
-            return new()
+            // Graph frequently labels hosted images as application/octet-stream.
+            // Buffering lets us inspect the signature and return a useful type/name.
+            await using (contentStream)
             {
-                IsSuccess = true,
-                StatusCode = 200,
-                Data = new()
+                var bufferedContent = new MemoryStream();
+                await contentStream.CopyToAsync(bufferedContent, cancellationToken);
+                bufferedContent.Position = 0;
+
+                var contentType = MediaContentType.Detect(
+                    bufferedContent,
+                    hostedContent.ContentType);
+
+                return new()
                 {
-                    Content = contentStream,
-                    ContentType = hostedContent.ContentType ?? "application/octet-stream"
-                }
-            };
+                    IsSuccess = true,
+                    StatusCode = 200,
+                    Data = new()
+                    {
+                        Content = bufferedContent,
+                        ContentType = contentType,
+                        FileName = MediaFileName.Create(
+                            null,
+                            $"teams-media-{hostedContentId}",
+                            contentType)
+                    }
+                };
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

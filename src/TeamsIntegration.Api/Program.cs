@@ -19,6 +19,20 @@ builder.Services.AddMinio(builder.Configuration);
 builder.Services.AddDatabaseLogging(builder.Configuration);
 builder.Services.ConfigureMicrosoftTeams(builder.Configuration);
 builder.Services.SetupAccessHubAuthorization(builder.Configuration);
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Dashboard", policy =>
+    {
+        var allowedOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? ["http://localhost:5173", "http://localhost:3000"];
+
+        policy.WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .WithExposedHeaders("Content-Disposition");
+    });
+});
 
 builder.Logging.AddFiltersFoDatabaseLogging();
 
@@ -78,6 +92,7 @@ if (builder.Configuration.GetValue<bool>("HttpsRedirection:Enabled"))
 }
 
 app.UseAuthentication();
+app.UseCors("Dashboard");
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

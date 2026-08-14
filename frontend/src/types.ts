@@ -1,0 +1,83 @@
+export interface ServiceResponse<T = unknown> {
+  isSuccess: boolean;
+  statusCode: number;
+  errorMessage?: string;
+  data?: T;
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  expiresIn: number;
+}
+export interface Team {
+  id: string;
+  displayName?: string;
+  description?: string;
+}
+export interface Channel {
+  id: string;
+  displayName?: string;
+  description?: string;
+  membershipType?: string;
+  webUrl?: string;
+}
+export interface ChannelResponse {
+  channels: Channel[];
+}
+export interface TeamWithChannels {
+  team?: Team;
+  channels: Channel[];
+}
+export interface Media {
+  id: string;
+  contentType: string;
+  sizeBytes: number;
+  objectName: string;
+}
+export interface StoredMessage {
+  id: string;
+  graphMessageId: string;
+  teamId: string;
+  channelId: string;
+  replyToId?: string;
+  subject?: string;
+  htmlContent?: string;
+  senderDisplayName?: string;
+  messageCreatedAt?: string;
+  messageLastModifiedAt?: string;
+  messageDeletedAt?: string;
+  webUrl?: string;
+  media: Media[];
+}
+export interface GraphMessage {
+  id?: string;
+  subject?: string;
+  body?: { content?: string; contentType?: string };
+  from?: {
+    user?: { displayName?: string };
+    application?: { displayName?: string };
+  };
+  createdDateTime?: string;
+  lastModifiedDateTime?: string;
+  deletedDateTime?: string;
+  webUrl?: string;
+  hostedContents?: GraphHostedContent[];
+}
+export interface GraphHostedContent {
+  id?: string;
+  contentType?: string;
+}
+export interface SyncResult {
+  receivedMessageCount: number;
+  insertedMessageCount: number;
+  updatedMessageCount: number;
+  unchangedMessageCount: number;
+  skippedMessageCount: number;
+  failedMessageCount: number;
+  synchronizedMediaCount: number;
+  synchronizedAt: string;
+}
+export interface SendResult {
+  messagesSendedSuccessfull: number;
+  messagesFailedWhenSending: number;
+}

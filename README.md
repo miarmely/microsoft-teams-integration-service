@@ -2,6 +2,25 @@
 
 > Enterprise-grade ASP.NET Core (.NET 9) microservice for synchronizing Microsoft Teams channel messages and hosted media into PostgreSQL and MinIO, while providing notification capabilities through Microsoft Teams Workflow Webhooks.
 
+## Enterprise dashboard
+
+The repository includes a separate React and TypeScript dashboard in `frontend/`. It provides persistent AccessHub login, live Microsoft Teams messages, synchronized database messages, channel synchronization, and Adaptive Card message delivery.
+
+Run the complete stack:
+
+```bash
+docker compose up --build
+```
+
+The dashboard is available at `http://localhost:3000` and the API at `http://localhost:8080`. To deploy with different public addresses, set these environment variables before building:
+
+```env
+DASHBOARD_API_URL=https://teams-api.example.com
+DASHBOARD_ORIGIN=https://teams.example.com
+```
+
+To use your company logo, add it to `frontend/public/company-logo.svg`, then replace the marked `brand-mark` element in `frontend/src/components/Brand.tsx` with the adjacent image example.
+
 ---
 
 ## Overview

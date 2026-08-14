@@ -486,3 +486,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Frontend build output
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local

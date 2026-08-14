@@ -10,6 +10,27 @@ namespace TeamsIntegration.Api.Controllers;
 public class MessageController(
     IMessageService msgService) : ControllerBase
 {
+    [HttpGet("media/{mediaId:guid}")]
+    [HasPermission(TeamsIntegrationPermissions.ViewMessages)]
+    public async Task<IActionResult> GetMedia(
+        [FromRoute] Guid mediaId,
+        CancellationToken cancellationToken = default)
+    {
+        var res = await msgService.GetMediaAsync(
+            mediaId,
+            cancellationToken);
+
+        if (!res.IsSuccess
+            || res.Data == null)
+            return StatusCode(res.StatusCode, res);
+
+        return File(
+            res.Data.Content,
+            res.Data.ContentType,
+            res.Data.FileName);
+    }
+
+
     [HttpGet("team/{teamId}/channel/{channelId}")]
     [HasPermission(TeamsIntegrationPermissions.ViewMessages)]
     public async Task<IActionResult> GetMessagesFromDb(

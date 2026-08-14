@@ -1,4 +1,24 @@
 services:
+  teams-dashboard:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${DASHBOARD_API_URL:-http://localhost:8080}
+
+    container_name: teams-integration-dashboard
+
+    ports:
+      - "3000:80"
+
+    depends_on:
+      - teams-api
+
+    restart: unless-stopped
+
+    networks:
+      - teams-network
+
   teams-api:
     build:
       context: .
@@ -51,6 +71,8 @@ services:
       AccessHub__Jwt__ClockSkewSeconds: "30"
 
       HttpsRedirection__Enabled: "false"
+
+      Cors__AllowedOrigins__0: ${DASHBOARD_ORIGIN:-http://localhost:3000}
 
       ConnectionStrings__PostgreSQL: "Host=postgresql;Port=5432;Database=teams_integration;Username=postgres;Password=admin" 
       

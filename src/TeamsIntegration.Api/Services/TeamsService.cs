@@ -2,7 +2,6 @@
 using System.Data;
 using Microsoft.Extensions.Options;
 using Microsoft.Graph.Models;
-using Microsoft.Kiota.Abstractions;
 using TeamsIntegration.Api.Configuration;
 using TeamsIntegration.Api.Entities;
 using TeamsIntegration.Api.Models.Dtos;
@@ -19,6 +18,24 @@ public sealed class TeamsService(
     IOptions<MicrosoftTeamsOptions> teamsOpts,
     ILogger<TeamsService> logger) : ITeamsService
 {
+    public Task<ServiceResponse<MediaContent>> GetMessageMediaAsync(
+        string teamId,
+        string channelId,
+        string messageId,
+        string hostedContentId,
+        CancellationToken cancellationToken = default)
+    {
+        // exception safe
+        var messageMedia = teamsRepo.GetHostedContentAsync(
+            teamId,
+            channelId,
+            messageId,
+            hostedContentId,
+            cancellationToken);
+
+        return messageMedia;
+    }
+
     private readonly MicrosoftTeamsOptions _teamsOpts = teamsOpts.Value;
 
     public async Task<ServiceResponse<MessageSendResponse>> SendMessageToChannelAsync(
@@ -285,6 +302,7 @@ public sealed class TeamsService(
             && pageNumber >= 1)
         {
             var skip = (pageNumber - 1) * (int)pageSize;
+
             selectedMessages = messages
                 .Skip(skip)
                 .Take((int)pageSize);
@@ -322,7 +340,8 @@ public sealed class TeamsService(
                     teamId,
                     channelId,
                     message.Id,
-                    cancellationToken)).ToList();
+                    cancellationToken))
+                    .ToList();
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

@@ -3,8 +3,10 @@ using Minio;
 using Minio.DataModel.Args;
 using Minio.Exceptions;
 using TeamsIntegration.Api.Configuration;
+using TeamsIntegration.Api.Models.Dtos;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Services.Interfaces;
+using TeamsIntegration.Api.Utilities;
 
 namespace TeamsIntegration.Api.Services;
 
@@ -13,6 +15,83 @@ public sealed class MinioObjectStorageService(
     IOptions<MinioOptions> minioOptions,
     ILogger<MinioObjectStorageService> logger) : IObjectStorageService
 {
+    /// <summary>
+    /// Get object in MinIO as "Stream". (EXCEPTION-SAFE)
+    /// </summary>
+    /// <param name="objectName"></param>
+    /// <param name="contentType"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public async Task<ServiceResponse<MediaContent>> DownloadAsync(
+        string objectName,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(objectName))
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status400BadRequest,
+                ErrorMessage = "'objectName' cannot be empty."
+            };
+
+        try
+        {
+            var content = new MemoryStream();
+            var args = new GetObjectArgs()
+                .WithBucket(_minioOptions.BucketName)
+                .WithObject(objectName)
+                .WithCallbackStream(stream => stream.CopyTo(content));
+
+            // put the object to "content" stream.
+            await minioClient.GetObjectAsync(args, cancellationToken);
+            content.Position = 0;
+            var detectedContentType = MediaContentType.Detect(content, contentType);
+
+            return new()
+            {
+                IsSuccess = true,
+                StatusCode = StatusCodes.Status200OK,
+                Data = new MediaContent
+                {
+                    Content = content,
+                    ContentType = detectedContentType,
+                    FileName = MediaFileName.Create(
+                        objectName,
+                        "teams-media",
+                        detectedContentType)
+                }
+            };
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (ObjectNotFoundException)
+        {
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status404NotFound,
+                ErrorMessage = "Stored media was not found."
+            };
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Failed downloading object {ObjectName} from MinIO.",
+                objectName);
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status500InternalServerError,
+                ErrorMessage = "Stored media could not be downloaded."
+            };
+        }
+    }
+
     private readonly MinioOptions _minioOptions = minioOptions.Value;
 
     public async Task<ServiceResponse<StoredObjectResult>> UploadAsync(

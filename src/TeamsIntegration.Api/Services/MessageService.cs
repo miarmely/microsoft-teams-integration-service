@@ -6,8 +6,57 @@ namespace TeamsIntegration.Api.Services;
 
 public sealed class MessageService(
     IMessageRepository msgRepo,
+    IMessageMediaRepository mediaRepo,
+    IObjectStorageService objStorageService,
     ILogger<MessageMediaService> logger) : IMessageService
 {
+    /// <summary>
+    /// Get media of message from database.
+    /// </summary>
+    /// <param name="mediaId"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public async Task<ServiceResponse<Models.Dtos.MediaContent>> GetMediaAsync(
+        Guid mediaId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // get media from database
+            var media = await mediaRepo.GetByIdAsync(mediaId, cancellationToken);
+
+            if (media == null)
+                return new()
+                {
+                    IsSuccess = false,
+                    StatusCode = StatusCodes.Status404NotFound,
+                    ErrorMessage = "Message media was not found."
+                };
+
+            // download media (EXCEPTION-SAFE)
+            var mediaRes = await objStorageService.DownloadAsync(
+                media.ObjectName,
+                media.ContentType,
+                cancellationToken);
+
+            return mediaRes;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Failed when getting media. (MediaId: {MediaId})",
+                mediaId);
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status500InternalServerError,
+                ErrorMessage = "Failed when getting media."
+            };
+        }
+    }
+
     public async Task<ServiceResponse<IReadOnlyCollection<TeamsMessageResponse>>> GetMessagesFromDbAsync(
         string teamId,
         string channelId,

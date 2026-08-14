@@ -55,6 +55,7 @@ public sealed class MessageRepository(
 
             rawMessages = await DbCtx.TeamsMessages
                 .AsNoTracking()
+                .Include(message => message.Media)
                 .Where(m => m.TeamId == teamId
                     && m.ChannelId == channelId)
                 .OrderByDescending(m => m.MessageCreatedAt)
@@ -69,6 +70,7 @@ public sealed class MessageRepository(
         {
             rawMessages = await DbCtx.TeamsMessages
                 .AsNoTracking()
+                .Include(message => message.Media)
                 .Where(m => m.TeamId == teamId
                     && m.ChannelId == channelId)
                 .OrderByDescending(m => m.MessageCreatedAt)
