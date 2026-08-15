@@ -1,6 +1,7 @@
 import {
   Database,
   LogOut,
+  KeyRound,
   Menu,
   Radio,
   RefreshCw,
@@ -17,6 +18,7 @@ const nav = [
   { to: "/messages/stored", label: "Synchronized", icon: Database },
   { to: "/synchronize", label: "Synchronization", icon: RefreshCw },
   { to: "/send", label: "Send message", icon: Send },
+  { to: "/webhooks", label: "Webhook URLs", icon: KeyRound },
 ];
 
 /** Provides authenticated pages with responsive navigation and sign-out. */

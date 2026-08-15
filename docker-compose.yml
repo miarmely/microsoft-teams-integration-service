@@ -76,8 +76,6 @@ services:
 
       ConnectionStrings__PostgreSQL: "Host=postgresql;Port=5432;Database=teams_integration;Username=postgres;Password=admin" 
       
-      MicrosoftTeams__WebhookUrl: ${WEBHOOK_URL}
-      
     networks:
       - teams-network
 

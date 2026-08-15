@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TeamsIntegration.Api.Data;
@@ -11,9 +12,11 @@ using TeamsIntegration.Api.Data;
 namespace TeamsIntegration.Api.Migrations
 {
     [DbContext(typeof(TeamsDbContext))]
-    partial class TeamsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260814133805_AddWebhookUrlEntity")]
+    partial class AddWebhookUrlEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -170,20 +173,18 @@ namespace TeamsIntegration.Api.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("ChannelId")
-                        .IsRequired()
+                    b.Property<Guid>("ChannelId")
                         .HasMaxLength(512)
-                        .HasColumnType("character varying(512)")
+                        .HasColumnType("uuid")
                         .HasColumnName("channel_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<string>("TeamId")
-                        .IsRequired()
+                    b.Property<Guid>("TeamId")
                         .HasMaxLength(512)
-                        .HasColumnType("character varying(512)")
+                        .HasColumnType("uuid")
                         .HasColumnName("team_id");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
@@ -198,9 +199,9 @@ namespace TeamsIntegration.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TeamId", "ChannelId")
+                    b.HasIndex("TeamId", "ChannelId", "Url")
                         .IsUnique()
-                        .HasDatabaseName("ux_webhook_url_team_channel");
+                        .HasDatabaseName("ux_webhook_url");
 
                     b.ToTable("webhook_urls", (string)null);
                 });

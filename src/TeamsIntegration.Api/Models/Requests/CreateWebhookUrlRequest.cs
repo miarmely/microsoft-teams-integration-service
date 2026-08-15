@@ -1,0 +1,8 @@
+namespace TeamsIntegration.Api.Models.Requests;
+
+public sealed record CreateWebhookUrlRequest
+{
+    public required string TeamId { get; init; }
+    public required string ChannelId { get; init; }
+    public required string Url { get; init; }
+}

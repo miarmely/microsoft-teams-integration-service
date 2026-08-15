@@ -1,8 +1,6 @@
 
 using System.Data;
-using Microsoft.Extensions.Options;
 using Microsoft.Graph.Models;
-using TeamsIntegration.Api.Configuration;
 using TeamsIntegration.Api.Entities;
 using TeamsIntegration.Api.Models.Dtos;
 using TeamsIntegration.Api.Models.Requests;
@@ -15,7 +13,7 @@ namespace TeamsIntegration.Api.Services;
 public sealed class TeamsService(
     ITeamsRepository teamsRepo,
     IMessageMediaService messageMediaService,
-    IOptions<MicrosoftTeamsOptions> teamsOpts,
+    IWebhookUrlService webhookService,
     ILogger<TeamsService> logger) : ITeamsService
 {
     public Task<ServiceResponse<MediaContent>> GetMessageMediaAsync(
@@ -36,8 +34,6 @@ public sealed class TeamsService(
         return messageMedia;
     }
 
-    private readonly MicrosoftTeamsOptions _teamsOpts = teamsOpts.Value;
-
     public async Task<ServiceResponse<MessageSendResponse>> SendMessageToChannelAsync(
         TeamsSendMultipleMessageRequest req,
         CancellationToken cancellationToken = default)
@@ -51,8 +47,23 @@ public sealed class TeamsService(
                 ErrorMessage = "You have to send minumum one message."
             };
 
-        // send messages to the Teams Channel
-        var webhookUrl = _teamsOpts.WebhookUrl;
+        // Resolve the workflow URL from the selected team/channel assignment.
+        var webhookResponse = await webhookService.GetByChannelAsync(
+            req.TeamId,
+            req.ChannelId,
+            cancellationToken);
+
+        if (!webhookResponse.IsSuccess || webhookResponse.Data is null)
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = webhookResponse.StatusCode,
+                ErrorMessage = webhookResponse.ErrorMessage
+            };
+
+        var webhookUrl = webhookResponse.Data.Url;
+
+        // Send each Adaptive Card through the resolved Teams workflow.
         var messagesSendedSuccessfull = 0;
         var messagesFailedWhenSending = 0;
 

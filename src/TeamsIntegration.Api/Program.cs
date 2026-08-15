@@ -17,7 +17,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwagger();
 builder.Services.AddMinio(builder.Configuration);
 builder.Services.AddDatabaseLogging(builder.Configuration);
-builder.Services.ConfigureMicrosoftTeams(builder.Configuration);
 builder.Services.SetupAccessHubAuthorization(builder.Configuration);
 builder.Services.AddCors(options =>
 {

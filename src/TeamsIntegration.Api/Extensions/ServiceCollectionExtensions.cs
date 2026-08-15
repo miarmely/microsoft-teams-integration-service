@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IMessageRepository, MessageRepository>();
         services.AddScoped<IMessageMediaRepository, MessageMediaRepository>();
+        services.AddScoped<IWebhookUrlRepository, WebhookUrlRepository>();
 
         services.AddScoped<ITeamsSyncService, TeamsSyncService>();
         services.AddScoped<IObjectStorageService, MinioObjectStorageService>();
@@ -20,6 +21,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMinioBucketInitializerService, MinioBucketInitializerService>();
         services.AddScoped<IMessageService, MessageService>();
         services.AddScoped<ITeamsService, TeamsService>();
+        services.AddScoped<IWebhookUrlService, WebhookUrlService>();
 
         services.AddSingleton<IMessageMediaService, MessageMediaService>();
         services.AddSingleton(TimeProvider.System);

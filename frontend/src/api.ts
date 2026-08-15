@@ -7,6 +7,7 @@ import type {
   StoredMessage,
   SyncResult,
   Team,
+  WebhookUrl,
 } from "./types";
 
 const API_URL =
@@ -108,6 +109,41 @@ export const api = {
     request<ChannelResponse>(
       `/api/Teams/${encodeURIComponent(teamId)}/channels`,
       {},
+      token,
+    ),
+  /** Returns all database-backed channel webhook assignments. */
+  webhooks: (token: string) =>
+    request<WebhookUrl[]>("/api/WebhookUrl", {}, token),
+  /** Creates a workflow webhook assignment for one channel. */
+  createWebhook: (
+    token: string,
+    teamId: string,
+    channelId: string,
+    url: string,
+  ) =>
+    request<WebhookUrl>(
+      "/api/WebhookUrl",
+      { method: "POST", body: JSON.stringify({ teamId, channelId, url }) },
+      token,
+    ),
+  /** Updates an existing channel webhook assignment. */
+  updateWebhook: (
+    token: string,
+    id: string,
+    teamId: string,
+    channelId: string,
+    url: string,
+  ) =>
+    request<WebhookUrl>(
+      `/api/WebhookUrl/${encodeURIComponent(id)}`,
+      { method: "PUT", body: JSON.stringify({ teamId, channelId, url }) },
+      token,
+    ),
+  /** Deletes a channel webhook assignment. */
+  deleteWebhook: (token: string, id: string) =>
+    request<undefined>(
+      `/api/WebhookUrl/${encodeURIComponent(id)}`,
+      { method: "DELETE" },
       token,
     ),
   /** Downloads a live message attachment from Graph through the API. */

@@ -5,6 +5,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { MessagesPage } from "./pages/MessagesPage";
 import { SendPage } from "./pages/SendPage";
 import { SyncPage } from "./pages/SyncPage";
+import { WebhooksPage } from "./pages/WebhooksPage";
 
 /** Guards dashboard routes and renders them inside the authenticated shell. */
 function Protected() {
@@ -31,6 +32,7 @@ export default function App() {
         />
         <Route path="/synchronize" element={<SyncPage />} />
         <Route path="/send" element={<SendPage />} />
+        <Route path="/webhooks" element={<WebhooksPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/messages/live" replace />} />
     </Routes>

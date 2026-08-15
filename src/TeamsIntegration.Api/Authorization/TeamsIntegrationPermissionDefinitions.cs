@@ -5,18 +5,27 @@ namespace TeamsIntegration.Api.Authorization;
 
 public static class TeamsIntegrationPermissionDefinitions
 {
-    public static IReadOnlyCollection<AccessHubPermissionRequest> All => [
-        new() {
+    public static IReadOnlyCollection<AccessHubPermissionRequest> All =>
+    [
+        new()
+        {
             Name = TeamsIntegrationPermissions.ViewMessages,
-            Description = "Senkronize edilmiş Microsoft Teams kanal mesajlarını görüntüleyebilir."
+            Description = "Synchronized Microsoft Teams channel messages can be viewed."
         },
-        new() {
+        new()
+        {
             Name = TeamsIntegrationPermissions.SynchronizeChannel,
-            Description = "Microsoft Teams kanal mesajlarını ve medya içeriklerini senkronize edebilir."
+            Description = "Microsoft Teams channel messages and media can be synchronized."
         },
-        new() {
+        new()
+        {
             Name = TeamsIntegrationPermissions.SendMessage,
-            Description = "Microsoft Team kanalına adaptive card yoluyla mesaj gönderebilir."
+            Description = "Adaptive Card messages can be sent to Microsoft Teams channels."
+        },
+        new()
+        {
+            Name = TeamsIntegrationPermissions.ManageWebhookUrls,
+            Description = "Microsoft Teams channel webhook URLs can be managed."
         }
     ];
 }

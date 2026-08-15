@@ -9,10 +9,12 @@ public static class TeamsIntegrationPermissions
     public const string ViewMessages = "teams.messages.view";
     public const string SynchronizeChannel = "teams.channels.sync";
     public const string SendMessage = "teams.messages.send";
+    public const string ManageWebhookUrls = "teams.webhooks.manage";
 
     public static readonly IReadOnlyCollection<string> All = [
         ViewMessages,
         SynchronizeChannel,
-        SendMessage
+        SendMessage,
+        ManageWebhookUrls
     ];
 }
