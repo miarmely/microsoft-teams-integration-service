@@ -1,6 +1,6 @@
 using Microsoft.Graph.Models;
-using TeamsIntegration.Api.Entities;
 using TeamsIntegration.Api.Models.Dtos;
+using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Models.Responses;
 
 namespace TeamsIntegration.Api.Repositories.Interfaces;
@@ -69,13 +69,13 @@ public interface ITeamsRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Send message to a Teams channel by webhook.
+    /// Send message to a Teams channel by webhook. (EXCEPTION-SAFE)
     /// </summary>
     /// <param name="card"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task SendMessageAsync(
+    Task<ServiceResponse> SendMessageAsync(
         string webhookUrl,
-        TeamsAdaptiveCard card,
+        TeamsWorkflowWebhookRequest card,
         CancellationToken cancellationToken = default);
 }

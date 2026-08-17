@@ -5,6 +5,7 @@ using Microsoft.Kiota.Abstractions;
 using TeamsIntegration.Api.Entities;
 using TeamsIntegration.Api.Mappings;
 using TeamsIntegration.Api.Models.Dtos;
+using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Repositories.Interfaces;
 using TeamsIntegration.Api.Utilities;
@@ -541,16 +542,103 @@ public class TeamsRepository(
         }
     }
 
-    public async Task SendMessageAsync(
+    public async Task<ServiceResponse> SendMessageAsync(
         string webhookUrl,
-        TeamsAdaptiveCard card,
+        TeamsWorkflowWebhookRequest payload,
         CancellationToken cancellationToken = default)
     {
-        using var res = await httpClient.PostAsJsonAsync(
+        // validate parameters
+        if (!Uri.TryCreate(
             webhookUrl,
-            card,
-            cancellationToken);
+            UriKind.Absolute,
+            out var webhookUri))
+        {
+            logger.LogWarning("Invalid Teams Workflow URL.");
 
-        res.EnsureSuccessStatusCode();
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status400BadRequest,
+                ErrorMessage = "Configured Teams Workflow URL is invalid."
+            };
+        }
+
+        // send message
+        try
+        {
+            // send request
+            using var response = await httpClient.PostAsJsonAsync(
+                webhookUri,
+                payload,
+                cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+                return new()
+                {
+                    IsSuccess = true,
+                    StatusCode = (int)response.StatusCode
+                };
+
+            // when any error occured
+            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            logger.LogWarning(
+                "Teams Workflow rejected message request. " +
+                "(StatusCode: {StatusCode}, Response: {Response})",
+                (int)response.StatusCode,
+                responseContent);
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = (int)response.StatusCode,
+                ErrorMessage = "Teams Workflow rejected the message request."
+            };
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            logger.LogInformation("Sending Teams message was cancelled.");
+
+            throw;
+        }
+        catch (TaskCanceledException ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Teams Workflow request timed out.");
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status504GatewayTimeout,
+                ErrorMessage = "Teams Workflow request timed out."
+            };
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(
+                ex,
+                "Network error occurred while sending message to Teams.");
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status503ServiceUnavailable,
+                ErrorMessage = "Teams Workflow is currently unavailable."
+            };
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Unexpected error occurred while sending message to Teams.");
+
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status500InternalServerError,
+                ErrorMessage = "Unexpected error occurred while sending message."
+            };
+        }
     }
 }

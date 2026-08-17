@@ -14,7 +14,7 @@ public interface ITeamsService
         string hostedContentId,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResponse<MessageSendResponse>> SendMessageToChannelAsync(
+    Task<ServiceResponse<MessageSendResponse>> SendMessagesToChannelAsync(
         TeamsSendMultipleMessageRequest req,
         CancellationToken cancellationToken = default);
 

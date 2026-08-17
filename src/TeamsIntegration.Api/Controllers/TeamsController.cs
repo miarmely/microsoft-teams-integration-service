@@ -13,11 +13,11 @@ public class TeamsController(
 {
     [HttpPost("message/send")]
     [HasPermission(TeamsIntegrationPermissions.SendMessage)]
-    public async Task<IActionResult> SendMessageToChannel(
+    public async Task<IActionResult> SendMessagesToChannel(
        [FromBody] TeamsSendMultipleMessageRequest req,
        CancellationToken cancellationToken = default)
     {
-        var res = await teamsService.SendMessageToChannelAsync(
+        var res = await teamsService.SendMessagesToChannelAsync(
             req,
             cancellationToken);
 

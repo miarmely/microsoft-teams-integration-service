@@ -7,13 +7,14 @@ using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Repositories.Interfaces;
 using TeamsIntegration.Api.Services.Interfaces;
+using TeamsIntegration.Api.Utilities;
 
 namespace TeamsIntegration.Api.Services;
 
 public sealed class TeamsService(
     ITeamsRepository teamsRepo,
     IMessageMediaService messageMediaService,
-    IWebhookUrlService webhookService,
+    IWebhookUrlService webhookUrlService,
     ILogger<TeamsService> logger) : ITeamsService
 {
     public Task<ServiceResponse<MediaContent>> GetMessageMediaAsync(
@@ -34,115 +35,128 @@ public sealed class TeamsService(
         return messageMedia;
     }
 
-    public async Task<ServiceResponse<MessageSendResponse>> SendMessageToChannelAsync(
+    public async Task<ServiceResponse<MessageSendResponse>> SendMessagesToChannelAsync(
         TeamsSendMultipleMessageRequest req,
         CancellationToken cancellationToken = default)
     {
-        // validate parameters
-        if (req.Messages.Count <= 0)
+        #region validate parameters
+        if (string.IsNullOrWhiteSpace(req.TeamId))
             return new()
             {
                 IsSuccess = false,
-                StatusCode = 400,
-                ErrorMessage = "You have to send minumum one message."
+                StatusCode = StatusCodes.Status400BadRequest,
+                ErrorMessage = "TeamId is required."
             };
 
-        // Resolve the workflow URL from the selected team/channel assignment.
-        var webhookResponse = await webhookService.GetByChannelAsync(
+        if (string.IsNullOrWhiteSpace(req.ChannelId))
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status400BadRequest,
+                ErrorMessage = "ChannelId is required."
+            };
+
+        if (req.Messages.Count == 0)
+            return new()
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status400BadRequest,
+                ErrorMessage = "At least one message must be provided."
+            };
+        #endregion
+
+        #region resolve the workflow URL from the selected team/channel assignment.
+        var webhookUrlRes = await webhookUrlService.GetByChannelAsync(
             req.TeamId,
             req.ChannelId,
             cancellationToken);
 
-        if (!webhookResponse.IsSuccess || webhookResponse.Data is null)
+
+        if (!webhookUrlRes.IsSuccess
+            || webhookUrlRes.Data == null)
             return new()
             {
                 IsSuccess = false,
-                StatusCode = webhookResponse.StatusCode,
-                ErrorMessage = webhookResponse.ErrorMessage
+                StatusCode = webhookUrlRes.StatusCode,
+                ErrorMessage = webhookUrlRes.ErrorMessage
             };
 
-        var webhookUrl = webhookResponse.Data.Url;
+        var webhookUrl = webhookUrlRes.Data.Url;
+        #endregion
 
-        // Send each Adaptive Card through the resolved Teams workflow.
-        var messagesSendedSuccessfull = 0;
-        var messagesFailedWhenSending = 0;
+        #region send messages
+        var successCount = 0;
+        var failedCount = 0;
 
         foreach (var msg in req.Messages)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            #region set payload
+            TeamsWorkflowWebhookRequest payload;
+
             try
             {
-                var body = new List<object>();
-
-                // set title of the message 
-                var msgTitle = !string.IsNullOrWhiteSpace(msg.Title) ?
-                    new
-                    {
-                        type = "TextBlock",
-                        text = msg.Title,
-                        weight = 2,
-                        size = "Medium"
-                    }
-                    : null;
-                if (msgTitle != null) body.Add(msgTitle);
-
-                // set "main content" of the message 
-                var msgContent = msg.Content
-                    .Select(msg => new
-                    {
-                        type = "TextBlock",
-                        text = msg,
-                        wrap = true
-                    })
-                    .ToArray();
-                if (msgContent.Length > 0) body.AddRange(msgContent);
-
-                // set "images" of the message 
-                var msgImages = msg.Images
-                    .Select(msg => new
-                    {
-                        type = "Image",
-                        url = msg.ImageUrl,
-                        size = "Stretch",
-                        alt = msg.ImageAltText
-                    })
-                    .ToArray();
-                if (msgImages.Length > 0) body.AddRange(msgImages);
-
-                // send message to the "Teams Channel"
-                var card = new TeamsAdaptiveCard
-                {
-                    Body = body
-                };
-
-                await teamsRepo.SendMessageAsync(
-                    webhookUrl,
-                    card,
-                    cancellationToken);
-
-                messagesSendedSuccessfull++;
+                payload = TeamsWorkflowPayloadFactory.Create(msg);
             }
-            catch (Exception ex)
+            catch (ArgumentException ex)  // if "msg" not contain any "title" or "content" (empty body)
             {
                 logger.LogWarning(
                     ex,
-                    "Failed sending message to Teams Channel. (Team: {TeamId}, Channel: {ChannelId})",
+                    "Invalid Teams message payload. " +
+                    "(Team: {TeamId}, Channel: {ChannelId})",
                     req.TeamId,
                     req.ChannelId);
 
-                messagesFailedWhenSending++;
+                failedCount++;
+                continue;
             }
-        }
+            #endregion
 
-        return new()
-        {
-            IsSuccess = true,
-            StatusCode = 200,
-            Data = new()
+            #region send message
+            var sendMsgRes = await teamsRepo.SendMessageAsync(
+                webhookUrl,
+                payload,
+                cancellationToken);
+
+            if (sendMsgRes.IsSuccess)
+                successCount++;
+
+            else
             {
-                MessagesSendedSuccessfull = messagesSendedSuccessfull,
-                MessagesFailedWhenSending = messagesFailedWhenSending
+                failedCount++;
+
+                logger.LogWarning(
+                    "Teams message could not be delivered. " +
+                    "(Team: {TeamId}, Channel: {ChannelId}, " +
+                    "StatusCode: {StatusCode})",
+                    req.TeamId,
+                    req.ChannelId,
+                    sendMsgRes.StatusCode);
             }
+            #endregion
+        }
+        #endregion
+
+        #region set "response" model
+        var isAllFailed = successCount == 0;
+
+        var res = new ServiceResponse<MessageSendResponse>
+        {
+            IsSuccess = !isAllFailed,
+            StatusCode = isAllFailed ? StatusCodes.Status502BadGateway : StatusCodes.Status200OK,
+            ErrorMessage = isAllFailed ? "All Teams messages failed to send." : null,
+            Data = isAllFailed ?
+                null
+                : new()
+                {
+                    MessagesSendedSuccessfull = successCount,
+                    MessagesFailedWhenSending = failedCount
+                }
         };
+        #endregion
+
+        return res;
     }
 
     public async Task<ServiceResponse<IReadOnlyCollection<TeamResponse>>> GetTeamsAsync(
