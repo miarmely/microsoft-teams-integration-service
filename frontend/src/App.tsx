@@ -6,6 +6,8 @@ import { MessagesPage } from "./pages/MessagesPage";
 import { SendPage } from "./pages/SendPage";
 import { SyncPage } from "./pages/SyncPage";
 import { WebhooksPage } from "./pages/WebhooksPage";
+import { TeamsPage } from "./pages/TeamsPage";
+import { ChannelsPage } from "./pages/ChannelsPage";
 
 /** Guards dashboard routes and renders them inside the authenticated shell. */
 function Protected() {
@@ -25,6 +27,8 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route element={<Protected />}>
+        <Route path="/teams" element={<TeamsPage />} />
+        <Route path="/channels" element={<ChannelsPage />} />
         <Route path="/messages/live" element={<MessagesPage mode="live" />} />
         <Route
           path="/messages/stored"

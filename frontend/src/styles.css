@@ -904,6 +904,127 @@ a {
 .webhook-actions svg {
   width: 16px;
 }
+.directory-card {
+  overflow: hidden;
+}
+.directory-toolbar {
+  min-height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+.channel-toolbar {
+  justify-content: flex-start;
+}
+.channel-toolbar > label:first-child {
+  min-width: 260px;
+  display: grid;
+  gap: 6px;
+}
+.channel-toolbar > label:first-child span {
+  color: #33445c;
+  font-size: 12px;
+  font-weight: 700;
+}
+.channel-toolbar select {
+  width: 100%;
+  border: 1px solid #cfd9e5;
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--ink);
+  background: #fff;
+}
+.channel-toolbar .search {
+  margin-left: auto;
+}
+.directory-count {
+  white-space: nowrap;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+.directory-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.directory-table th {
+  padding: 12px 18px;
+  color: #6c7b8e;
+  background: #f7f9fc;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.directory-table td {
+  padding: 15px 18px;
+  border-bottom: 1px solid #e9eef4;
+  color: #42536a;
+  font-size: 13px;
+  vertical-align: middle;
+}
+.directory-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.directory-table tbody tr:hover {
+  background: #fafcff;
+}
+.directory-table .description-cell {
+  min-width: 220px;
+  max-width: 420px;
+  color: var(--muted);
+}
+.copyable-id {
+  min-width: 280px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.copyable-id code {
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #314b65;
+  font-size: 12px;
+  user-select: all;
+}
+.copyable-id button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 6px 8px;
+  color: var(--blue);
+  background: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.copyable-id button svg {
+  width: 14px;
+  height: 14px;
+}
+.type-chip {
+  display: inline-block;
+  padding: 4px 7px;
+  border-radius: 6px;
+  color: #46627c;
+  background: #edf3f8;
+  font-size: 11px;
+  text-transform: capitalize;
+}
+.table-loading {
+  padding: 55px 20px;
+  color: var(--muted);
+  text-align: center;
+}
 .spin {
   animation: spin 1s linear infinite;
 }

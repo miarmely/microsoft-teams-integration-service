@@ -2,10 +2,12 @@ import {
   Database,
   LogOut,
   KeyRound,
+  Rows3,
   Menu,
   Radio,
   RefreshCw,
   Send,
+  Users,
   X,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -14,6 +16,8 @@ import { useAuth } from "../auth";
 import { Brand } from "./Brand";
 
 const nav = [
+  { to: "/teams", label: "Teams", icon: Users },
+  { to: "/channels", label: "Channels", icon: Rows3 },
   { to: "/messages/live", label: "Live messages", icon: Radio },
   { to: "/messages/stored", label: "Synchronized", icon: Database },
   { to: "/synchronize", label: "Synchronization", icon: RefreshCw },
