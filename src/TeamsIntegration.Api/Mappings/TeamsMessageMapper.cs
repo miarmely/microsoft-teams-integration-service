@@ -36,6 +36,7 @@ public static partial class TeamsMessageMapper
     /// <param name="graphMessage"></param>
     /// <param name="teamId"></param>
     /// <param name="channelId"></param>
+    /// <param name="utcNow">Current UTC time used for persistence timestamps.</param>
     /// <returns></returns>
     public static TeamsMessage CreateEntity(
         ChatMessage graphMessage,
@@ -81,6 +82,7 @@ public static partial class TeamsMessageMapper
     /// </summary>
     /// <param name="entity"></param>
     /// <param name="graphMessage"></param>
+    /// <param name="utcNow">Current UTC time used when a change is persisted.</param>
     /// <returns></returns>
     public static bool UpdateEntity(
         TeamsMessage entity,

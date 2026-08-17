@@ -107,7 +107,7 @@ public sealed partial class WebhookUrlService(
             : Success(Map(webhook));
     }
 
-    /// <summary>Resolves the single webhook assigned to a Teams channel./summary>
+    /// <summary>Resolves the single webhook assigned to a Teams channel.</summary>
     public async Task<ServiceResponse<WebhookUrlResponse>> GetByChannelAsync(
         string teamId,
         string channelId,

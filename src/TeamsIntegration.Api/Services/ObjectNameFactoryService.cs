@@ -23,6 +23,7 @@ public sealed partial class ObjectNameFactoryService
     /// Do cencorship to invalid chars on the value.
     /// </summary>
     /// <param name="value"></param>
+    /// <param name="cencorshipChar">Replacement character for invalid path characters.</param>
     /// <returns></returns>
     private static string SanitizeSegment(
         string value,

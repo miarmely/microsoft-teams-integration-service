@@ -328,3 +328,5 @@ C:\Users\user\AppData\Local\Temp\teams-integration-build-check\TeamsIntegration.
 C:\Users\user\AppData\Local\Temp\teams-integration-build-check\TeamsIntegration.Api.runtimeconfig.json
 C:\Users\user\AppData\Local\Temp\teams-integration-build-check\TeamsIntegration.Api.dll
 C:\Users\user\AppData\Local\Temp\teams-integration-build-check\TeamsIntegration.Api.pdb
+C:\Users\user\Desktop\ARCHIEVE\Software\MKS DevO\teams-integration-service\src\TeamsIntegration.Api\bin\Debug\net9.0\TeamsIntegration.Api.xml
+C:\Users\user\Desktop\ARCHIEVE\Software\MKS DevO\teams-integration-service\src\TeamsIntegration.Api\obj\Debug\net9.0\TeamsIntegration.Api.xml

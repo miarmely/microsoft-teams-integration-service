@@ -14,6 +14,12 @@ public interface ITeamsService
         string hostedContentId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Send multiple message to specific a channel by Webhook. (EXCEPTION-SAFE)
+    /// </summary>
+    /// <param name="req"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     Task<ServiceResponse<MessageSendResponse>> SendMessagesToChannelAsync(
         TeamsSendMultipleMessageRequest req,
         CancellationToken cancellationToken = default);

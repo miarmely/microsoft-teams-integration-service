@@ -1,4 +1,5 @@
 using Microsoft.OpenApi;
+using System.Reflection;
 
 namespace TeamsIntegration.Api.Extensions;
 
@@ -34,6 +35,10 @@ public static class SwaggerExtensions
             {
                 [new OpenApiSecuritySchemeReference("Bearer", doc)] = new List<string>()
             });
+
+            // Import controller and DTO XML comments into endpoint and schema descriptions.
+            var xmlFileName = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            opts.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFileName));
         });
 
         return services;

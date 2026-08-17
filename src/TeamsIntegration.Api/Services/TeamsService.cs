@@ -93,7 +93,7 @@ public sealed class TeamsService(
             cancellationToken.ThrowIfCancellationRequested();
 
             #region set payload
-            TeamsWorkflowWebhookRequest payload;
+            TeamsWorkflowMessageRequest payload;
 
             try
             {

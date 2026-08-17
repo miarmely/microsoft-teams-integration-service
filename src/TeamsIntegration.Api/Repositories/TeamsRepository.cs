@@ -544,7 +544,7 @@ public class TeamsRepository(
 
     public async Task<ServiceResponse> SendMessageAsync(
         string webhookUrl,
-        TeamsWorkflowWebhookRequest payload,
+        TeamsWorkflowMessageRequest payload,
         CancellationToken cancellationToken = default)
     {
         // validate parameters

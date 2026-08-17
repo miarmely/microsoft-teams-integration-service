@@ -1,8 +1,11 @@
 namespace TeamsIntegration.Api.Models.Responses;
 
+/// <summary>Detailed outcome of synchronizing one Teams channel.</summary>
 public sealed record ChannelSyncResponse
 {
+    /// <summary>Microsoft Teams team identifier.</summary>
     public required string TeamId { get; init; }
+    /// <summary>Microsoft Teams channel identifier.</summary>
     public required string ChannelId { get; init; }
     /// <summary>
     /// Total messages received from Graph
@@ -21,11 +24,11 @@ public sealed record ChannelSyncResponse
     /// </summary>
     public int UnchangedMessageCount { get; init; }
     /// <summary>
-    /// Count of skipped messages which they haven't message id.
+    /// Messages skipped because Microsoft Graph returned no message identifier.
     /// </summary>
     public int SkippedMessageCount { get; init; }
     /// <summary>
-    /// Failed message count because of exceptions occurred while message synchronization.
+    /// Messages that could not be processed because of an exception.
     /// </summary>
     public int FailedMessageCount { get; init; }
     /// <summary>
@@ -33,8 +36,9 @@ public sealed record ChannelSyncResponse
     /// </summary>
     public int SynchronizedMediaCount { get; init; }
     /// <summary>
-    /// List of message ids which their media synchronization failed.
+    /// Database message IDs whose media synchronization failed.
     /// </summary>
     public List<Guid> MessagesWhichMediaSyncFailed { get; init; } = [];
+    /// <summary>UTC completion timestamp.</summary>
     public DateTimeOffset SynchronizedAt { get; init; }
 }

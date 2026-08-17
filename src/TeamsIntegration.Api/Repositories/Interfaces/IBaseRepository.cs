@@ -7,7 +7,7 @@ public interface IBaseRepository
     /// <summary>
     /// Save changes to the database with error handling and logging.
     /// </summary>
-    /// <param name="teamsId">For logging (optional)</param>
+    /// <param name="teamId">For logging (optional)</param>
     /// <param name="channelId">For logging (optional)</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>

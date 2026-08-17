@@ -71,11 +71,12 @@ public interface ITeamsRepository
     /// <summary>
     /// Send message to a Teams channel by webhook. (EXCEPTION-SAFE)
     /// </summary>
+    /// <param name="webhookUrl">Teams Workflows webhook URL resolved for the channel.</param>
     /// <param name="card"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     Task<ServiceResponse> SendMessageAsync(
         string webhookUrl,
-        TeamsWorkflowWebhookRequest card,
+        TeamsWorkflowMessageRequest card,
         CancellationToken cancellationToken = default);
 }

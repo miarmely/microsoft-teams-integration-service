@@ -37,6 +37,8 @@ public interface IMessageRepository : IBaseRepository
     /// </summary>
     /// <param name="teamId"></param>
     /// <param name="channelId"></param>
+    /// <param name="pageNumber">One-based page number.</param>
+    /// <param name="pageSize">Optional maximum number of records per page.</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     Task<IReadOnlyCollection<TeamsMessageResponse>> GetByChannelAsync(

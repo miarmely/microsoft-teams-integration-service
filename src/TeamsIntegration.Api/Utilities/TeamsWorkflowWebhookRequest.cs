@@ -1,3 +1,4 @@
+using System.Net;
 using TeamsIntegration.Api.Models.Dtos;
 using TeamsIntegration.Api.Models.Requests;
 
@@ -11,52 +12,36 @@ public static class TeamsWorkflowPayloadFactory
     /// <param name="message"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public static TeamsWorkflowWebhookRequest Create(
+    public static TeamsWorkflowMessageRequest Create(
         TeamsAdaptiveCardMessage message)
     {
+        #region validations
         ArgumentNullException.ThrowIfNull(message);
 
-        // store message title to buffer
-        var parts = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(message.Title))
-            parts.Add(message.Title.Trim());
-
-        // store paragraphs to buffer
-        foreach (var paragraph in message.Content)
-            if (!string.IsNullOrWhiteSpace(paragraph))
-                parts.Add(paragraph.Trim());
-
-        if (parts.Count == 0)
+        if (string.IsNullOrWhiteSpace(message.Title)
+            && message.Content.Count == 0)
             throw new ArgumentException(
-                "Message must contain a title or content.",
+                "Message must contain title or content.",
                 nameof(message));
+        #endregion
 
-        // create model
-        var text = string.Join(
-            Environment.NewLine + Environment.NewLine,
+        #region set message "content" and "title"
+        var parts = message.Content
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(WebUtility.HtmlEncode);
+
+        var content = string.Join(
+            "<br/><br/>",
             parts);
 
-        var request = new TeamsWorkflowWebhookRequest
-        {
-            Attachments =
-            [
-                new TeamsWorkflowAttachment
-                {
-                    Content = new TeamsWorkflowAdaptiveCard
-                    {
-                        Body =
-                        [
-                            new TeamsWorkflowTextBlock
-                            {
-                                Text = text
-                            }
-                        ]
-                    }
-                }
-            ]
-        };
+        var title = string.IsNullOrWhiteSpace(message.Title) ?
+            string.Empty
+            : $"<strong>{WebUtility.HtmlEncode(message.Title)}</strong><br/><br/>";
+        #endregion
 
-        return request;
+        return new TeamsWorkflowMessageRequest
+        {
+            Message = title + content
+        };
     }
 }
