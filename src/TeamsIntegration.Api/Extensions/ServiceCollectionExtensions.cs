@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMessageMediaSynchronizationService, MessageMediaSynchronizationService>();
         services.AddScoped<IMinioBucketInitializerService, MinioBucketInitializerService>();
         services.AddScoped<IMessageService, MessageService>();
+        services.AddScoped<IMessageExportService, MessageExportService>();
         services.AddScoped<ITeamsService, TeamsService>();
         services.AddScoped<IWebhookUrlService, WebhookUrlService>();
         services.AddScoped<IAccessHubApiKeyRepository, AccessHubApiKeyRepository>();

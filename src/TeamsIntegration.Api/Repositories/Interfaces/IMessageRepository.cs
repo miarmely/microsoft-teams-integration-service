@@ -47,4 +47,12 @@ public interface IMessageRepository : IBaseRepository
         int pageNumber = 1,
         int? pageSize = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Gets complete synchronized message entities and media for a channel export.</summary>
+    Task<IReadOnlyCollection<TeamsMessage>> GetForExportAsync(
+        string teamId,
+        string channelId,
+        DateTimeOffset? fromDate,
+        DateTimeOffset? toDate,
+        CancellationToken cancellationToken = default);
 }

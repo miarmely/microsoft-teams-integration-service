@@ -117,4 +117,32 @@ public sealed class MessageRepository(
 
         return messages;
     }
+
+    public async Task<IReadOnlyCollection<TeamsMessage>> GetForExportAsync(
+        string teamId,
+        string channelId,
+        DateTimeOffset? fromDate,
+        DateTimeOffset? toDate,
+        CancellationToken cancellationToken = default)
+    {
+        var query = DbCtx.TeamsMessages
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(message => message.Media)
+            .Where(message => message.TeamId == teamId
+                && message.ChannelId == channelId);
+
+        if (fromDate.HasValue)
+            query = query.Where(message => message.MessageCreatedAt >= fromDate.Value);
+
+        if (toDate.HasValue)
+            query = query.Where(message => message.MessageCreatedAt <= toDate.Value);
+
+        var messages = await query
+            .OrderByDescending(message => message.MessageCreatedAt)
+            .ThenByDescending(message => message.Id)
+            .ToListAsync(cancellationToken);
+
+        return messages;
+    }
 }
