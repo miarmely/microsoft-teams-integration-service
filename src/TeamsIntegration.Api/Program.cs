@@ -10,6 +10,7 @@ using TeamsIntegration.Api.Services.Interfaces;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddMemoryCache();
 builder.Services.AddApplicationServices();
 builder.Services.AddPostgreSql(builder.Configuration);
 builder.Services.AddMicrosoftGraph(builder.Configuration);

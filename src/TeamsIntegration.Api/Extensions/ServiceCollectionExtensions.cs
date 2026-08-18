@@ -22,6 +22,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMessageService, MessageService>();
         services.AddScoped<ITeamsService, TeamsService>();
         services.AddScoped<IWebhookUrlService, WebhookUrlService>();
+        services.AddScoped<IAccessHubApiKeyRepository, AccessHubApiKeyRepository>();
+        services.AddScoped<IApiKeyValidationService, ApiKeyValidationService>();
 
         services.AddSingleton<IMessageMediaService, MessageMediaService>();
         services.AddSingleton(TimeProvider.System);

@@ -1,8 +1,10 @@
 using System.Text;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using TeamsIntegration.Api.Authentication;
 using TeamsIntegration.Api.Authorization;
 using TeamsIntegration.Api.Authorization.Models;
 using TeamsIntegration.Api.Configuration;
@@ -29,7 +31,7 @@ public static class AccessHubExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // bind "AccessHubOptions" model
+        #region bind "AccessHubOptionsForBasicAuth" model
         services
             .AddOptions<AccessHubOptionsForBasicAuth>()
             .Bind(configuration.GetSection(IAccessHubOptions.SectionName))
@@ -61,8 +63,9 @@ public static class AccessHubExtensions
                 opts => opts.Jwt.ClockSkewSeconds >= 0,
                 "'ClockSkewSeconds' cannot be negative for 'AccessHub:Jwt:ClockSkewSeconds'.")
             .ValidateOnStart();
+        #endregion
 
-        // set "signing key"
+        #region set "signing key"
         var accessHubOpts = configuration
             .GetRequiredSection(IAccessHubOptions.SectionName)
             .Get<AccessHubOptionsForBasicAuth>()
@@ -70,15 +73,33 @@ public static class AccessHubExtensions
 
         var signingKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(accessHubOpts.Jwt.SecretKey));
+        #endregion
 
-        // add "JWT Bearer" authentication
+        #region  add "JWT Bearer" or "Api-Key" authentication
         services
             .AddAuthentication(opts =>
             {
-                opts.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                opts.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                opts.DefaultAuthenticateScheme = AuthenticationSchemeNames.SmartScheme;
+                opts.DefaultChallengeScheme = AuthenticationSchemeNames.SmartScheme;
             })
-            .AddJwtBearer(opts =>
+            .AddPolicyScheme(
+                AuthenticationSchemeNames.SmartScheme,
+                AuthenticationSchemeNames.SmartScheme,
+                opts =>
+                {
+                    // select "authentication type" dynamically
+                    opts.ForwardDefaultSelector = ctx =>
+                    {
+                        // if header includes "api key" header, don't use jwt authentication
+                        if (ctx.Request.Headers.ContainsKey(ApiKeyAuthenticationDefaults.HeaderName))
+                            return ApiKeyAuthenticationDefaults.Scheme;
+
+                        return JwtBearerDefaults.AuthenticationScheme;
+                    };
+                })
+            .AddJwtBearer(
+                JwtBearerDefaults.AuthenticationScheme,
+                opts =>
             {
                 opts.MapInboundClaims = false;
 
@@ -114,6 +135,7 @@ public static class AccessHubExtensions
 
                         return Task.CompletedTask;
                     },
+
                     OnChallenge = async ctx =>
                     {
                         ctx.HandleResponse();
@@ -137,6 +159,7 @@ public static class AccessHubExtensions
 
                         await httpCtx.Response.WriteAsJsonAsync(response);
                     },
+
                     OnForbidden = async ctx =>
                     {
                         // set http "response"
@@ -159,7 +182,11 @@ public static class AccessHubExtensions
                         await httpCtx.Response.WriteAsJsonAsync(response);
                     },
                 };
-            });
+            })
+            .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
+                ApiKeyAuthenticationDefaults.Scheme,
+                _ => { });
+        #endregion
 
         // protect all enpoints even if they don't have "[Authorize]" attribute. (FALLBACK-POLICY)
         services.AddAuthorization(opts =>
@@ -190,6 +217,17 @@ public static class AccessHubExtensions
             client.Timeout = TimeSpan.FromSeconds(15);
         });
 
+        // its for "HttpClientFactory in "AccessHubApiKeyRepository" 
+        services.AddHttpClient("AccessHubPublic", (serviceProvider, client) =>
+        {
+            var options = serviceProvider
+                .GetRequiredService<IOptions<AccessHubOptionsForBasicAuth>>()
+                .Value;
+
+            client.BaseAddress = new Uri(options.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
+
         // its for "HttpClient in "AccessHubRepository"
         services
             .AddHttpClient<IAccessHubRepository, AccessHubRepository>((serviceProvider, client) =>
@@ -212,3 +250,4 @@ public static class AccessHubExtensions
         return services;
     }
 }
+
