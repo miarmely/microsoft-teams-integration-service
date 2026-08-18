@@ -57,6 +57,7 @@ public class MessageController(
             res.Data.FileName);
     }
 
+
     /// <summary>Downloads media belonging to a synchronized message.</summary>
     /// <remarks>Reads the media record from PostgreSQL and streams its object from MinIO.</remarks>
     /// <param name="mediaId">Database identifier from a message's <c>media</c> collection.</param>

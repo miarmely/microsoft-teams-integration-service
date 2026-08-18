@@ -66,7 +66,14 @@ async function requestBlob(
   });
 
   if (!response.ok) {
-    throw new Error(`Media download failed (${response.status}).`);
+    let message = `Download failed (${response.status}).`;
+    try {
+      const error = (await response.json()) as ServiceResponse;
+      if (error.errorMessage) message = error.errorMessage;
+    } catch {
+      // Binary endpoints may return an empty or non-JSON error response.
+    }
+    throw new Error(message);
   }
 
   const disposition = response.headers.get("Content-Disposition") ?? "";
@@ -161,6 +168,18 @@ export const api = {
   /** Downloads synchronized message media from MinIO through the API. */
   storedMedia: (token: string, mediaId: string) =>
     requestBlob(`/api/Message/media/${encodeURIComponent(mediaId)}`, token),
+  /** Downloads synchronized channel messages and images as a ZIP archive. */
+  exportMessages: (
+    token: string,
+    teamId: string,
+    channelId: string,
+    fromDate?: string,
+    toDate?: string,
+  ) =>
+    requestBlob(
+      `/api/Message/team/${encodeURIComponent(teamId)}/channel/${encodeURIComponent(channelId)}/export?${query({ fromDate, toDate })}`,
+      token,
+    ),
   /** Fetches channel messages directly from Microsoft Graph. */
   liveMessages: (
     token: string,

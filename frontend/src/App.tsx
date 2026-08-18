@@ -8,6 +8,7 @@ import { SyncPage } from "./pages/SyncPage";
 import { WebhooksPage } from "./pages/WebhooksPage";
 import { TeamsPage } from "./pages/TeamsPage";
 import { ChannelsPage } from "./pages/ChannelsPage";
+import { ExportPage } from "./pages/ExportPage";
 
 /** Guards dashboard routes and renders them inside the authenticated shell. */
 function Protected() {
@@ -35,6 +36,7 @@ export default function App() {
           element={<MessagesPage mode="stored" />}
         />
         <Route path="/synchronize" element={<SyncPage />} />
+        <Route path="/export" element={<ExportPage />} />
         <Route path="/send" element={<SendPage />} />
         <Route path="/webhooks" element={<WebhooksPage />} />
       </Route>

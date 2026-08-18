@@ -1025,6 +1025,67 @@ a {
   color: var(--muted);
   text-align: center;
 }
+.export-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.75fr);
+  gap: 20px;
+  align-items: start;
+}
+.export-form > .section-title {
+  margin-bottom: 24px;
+}
+.export-button {
+  min-width: 210px;
+}
+.export-summary {
+  padding: 25px;
+  background: linear-gradient(155deg, #ffffff, #f5f9fd);
+}
+.export-summary h2 {
+  margin: 8px 0 7px;
+  font-size: 21px;
+}
+.export-summary > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.export-content-list {
+  display: grid;
+  gap: 18px;
+  margin-top: 25px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.export-content-list > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+.export-content-list > div > svg {
+  flex: 0 0 20px;
+  width: 20px;
+  color: var(--blue);
+}
+.export-content-list span {
+  display: grid;
+  gap: 3px;
+}
+.export-content-list strong {
+  color: #2d4056;
+  font-size: 13px;
+}
+.export-content-list small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.field-error {
+  margin-top: -12px;
+  color: var(--red);
+  font-size: 12px;
+}
 .spin {
   animation: spin 1s linear infinite;
 }
@@ -1078,6 +1139,9 @@ a {
   .stats {
     grid-template-columns: repeat(3, 1fr);
     row-gap: 20px;
+  }
+  .export-layout {
+    grid-template-columns: 1fr;
   }
 }
 @media (max-width: 560px) {

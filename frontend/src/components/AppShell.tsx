@@ -1,5 +1,6 @@
 import {
   Database,
+  Archive,
   LogOut,
   KeyRound,
   Rows3,
@@ -21,6 +22,7 @@ const nav = [
   { to: "/messages/live", label: "Live messages", icon: Radio },
   { to: "/messages/stored", label: "Synchronized", icon: Database },
   { to: "/synchronize", label: "Synchronization", icon: RefreshCw },
+  { to: "/export", label: "Export messages", icon: Archive },
   { to: "/send", label: "Send message", icon: Send },
   { to: "/webhooks", label: "Webhook URLs", icon: KeyRound },
 ];
