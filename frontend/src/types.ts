@@ -89,3 +89,22 @@ export interface WebhookUrl {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface FailedMessageDeletion {
+  messageId: string;
+  graphMessageId: string;
+  reason: string;
+}
+
+export interface MessageDeletionResult {
+  teamId: string;
+  channelId: string;
+  fromDate: string;
+  toDate: string;
+  matchedMessageCount: number;
+  deletedMessageCount: number;
+  deletedMediaCount: number;
+  failedMessageCount: number;
+  failures: FailedMessageDeletion[];
+  completedAt: string;
+}

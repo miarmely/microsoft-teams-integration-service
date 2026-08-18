@@ -8,6 +8,7 @@ import {
   Radio,
   RefreshCw,
   Send,
+  Trash2,
   Users,
   X,
 } from "lucide-react";
@@ -23,6 +24,7 @@ const nav = [
   { to: "/messages/stored", label: "Synchronized", icon: Database },
   { to: "/synchronize", label: "Synchronization", icon: RefreshCw },
   { to: "/export", label: "Export messages", icon: Archive },
+  { to: "/messages/delete", label: "Delete messages", icon: Trash2 },
   { to: "/send", label: "Send message", icon: Send },
   { to: "/webhooks", label: "Webhook URLs", icon: KeyRound },
 ];

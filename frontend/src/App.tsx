@@ -9,6 +9,7 @@ import { WebhooksPage } from "./pages/WebhooksPage";
 import { TeamsPage } from "./pages/TeamsPage";
 import { ChannelsPage } from "./pages/ChannelsPage";
 import { ExportPage } from "./pages/ExportPage";
+import { DeleteMessagesPage } from "./pages/DeleteMessagesPage";
 
 /** Guards dashboard routes and renders them inside the authenticated shell. */
 function Protected() {
@@ -37,6 +38,7 @@ export default function App() {
         />
         <Route path="/synchronize" element={<SyncPage />} />
         <Route path="/export" element={<ExportPage />} />
+        <Route path="/messages/delete" element={<DeleteMessagesPage />} />
         <Route path="/send" element={<SendPage />} />
         <Route path="/webhooks" element={<WebhooksPage />} />
       </Route>

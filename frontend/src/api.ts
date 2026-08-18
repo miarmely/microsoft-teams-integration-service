@@ -2,6 +2,7 @@ import type {
   ChannelResponse,
   GraphMessage,
   LoginResponse,
+  MessageDeletionResult,
   SendResult,
   ServiceResponse,
   StoredMessage,
@@ -9,6 +10,18 @@ import type {
   Team,
   WebhookUrl,
 } from "./types";
+
+/** Preserves structured API details when an operation fails or partly succeeds. */
+export class ApiResponseError<T = unknown> extends Error {
+  constructor(
+    message: string,
+    public readonly statusCode: number,
+    public readonly data?: T,
+  ) {
+    super(message);
+    this.name = "ApiResponseError";
+  }
+}
 
 const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ??
@@ -45,7 +58,11 @@ async function request<T>(
 
   // Check both HTTP status and the application's success flag.
   if (!response.ok || !body.isSuccess) {
-    throw new Error(body.errorMessage || `Request failed (${response.status}).`);
+    throw new ApiResponseError(
+      body.errorMessage || `Request failed (${response.status}).`,
+      response.status,
+      body.data,
+    );
   }
 
   return body.data as T;
@@ -178,6 +195,19 @@ export const api = {
   ) =>
     requestBlob(
       `/api/Message/team/${encodeURIComponent(teamId)}/channel/${encodeURIComponent(channelId)}/export?${query({ fromDate, toDate })}`,
+      token,
+    ),
+  /** Permanently deletes synchronized messages and their MinIO media. */
+  deleteSynchronizedMessages: (
+    token: string,
+    teamId: string,
+    channelId: string,
+    fromDate: string,
+    toDate: string,
+  ) =>
+    request<MessageDeletionResult>(
+      `/api/Message/team/${encodeURIComponent(teamId)}/channel/${encodeURIComponent(channelId)}?${query({ fromDate, toDate })}`,
+      { method: "DELETE" },
       token,
     ),
   /** Fetches channel messages directly from Microsoft Graph. */
