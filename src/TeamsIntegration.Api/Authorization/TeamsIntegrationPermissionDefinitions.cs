@@ -26,6 +26,11 @@ public static class TeamsIntegrationPermissionDefinitions
         {
             Name = TeamsIntegrationPermissions.ManageWebhookUrls,
             Description = "Microsoft Teams channel webhook URLs can be managed."
+        },
+        new()
+        {
+            Name = TeamsIntegrationPermissions.DeleteMessages,
+            Description = "Synchronized Microsoft Teams messages and their stored media can be permanently deleted."
         }
     ];
 }

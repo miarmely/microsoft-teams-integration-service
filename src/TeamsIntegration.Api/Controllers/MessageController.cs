@@ -3,6 +3,7 @@ using TeamsIntegration.Api.Authorization.Attributes;
 using TeamsIntegration.Api.Authorization.Models;
 using TeamsIntegration.Api.Services.Interfaces;
 using TeamsIntegration.Api.Models.Responses;
+using TeamsIntegration.Api.Models.Requests;
 
 namespace TeamsIntegration.Api.Controllers;
 
@@ -10,7 +11,8 @@ namespace TeamsIntegration.Api.Controllers;
 [Route("api/[controller]")]
 public class MessageController(
     IMessageService msgService,
-    IMessageExportService exportService) : ControllerBase
+    IMessageExportService exportService,
+    IMessageDeletionService msgDelService) : ControllerBase
 {
     /// <summary>Exports synchronized channel messages and images as a ZIP archive.</summary>
     /// <remarks>
@@ -113,5 +115,43 @@ public class MessageController(
             cancellationToken);
 
         return StatusCode(res.StatusCode, res);
+    }
+
+
+    /// <summary>Permanently deletes synchronized messages and media in a date range.</summary>
+    /// <remarks>
+    /// Both date bounds are inclusive and are compared with the original Teams message
+    /// creation timestamp. MinIO objects are deleted before their PostgreSQL records.
+    /// A 207 response means some messages were retained and can be retried safely.
+    /// </remarks>
+    /// <param name="teamId">Microsoft Teams team identifier.</param>
+    /// <param name="channelId">Microsoft Teams channel identifier.</param>
+    /// <param name="request">Required inclusive FromDate and ToDate query parameters.</param>
+    /// <param name="cancellationToken">Cancels database and MinIO operations.</param>
+    /// <returns>Counts of matched, deleted, and retained messages and media.</returns>
+    [HttpDelete("team/{teamId}/channel/{channelId}")]
+    [HasPermission(TeamsIntegrationPermissions.DeleteMessages)]
+    [ProducesResponseType(typeof(ServiceResponse<DeleteSynchronizedMessagesResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ServiceResponse<DeleteSynchronizedMessagesResponse>), StatusCodes.Status207MultiStatus)]
+    [ProducesResponseType(typeof(ServiceResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ServiceResponse), StatusCodes.Status503ServiceUnavailable)]
+    [ProducesResponseType(typeof(ServiceResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Delete(
+        [FromRoute] string teamId,
+        [FromRoute] string channelId,
+        [FromQuery] DeleteSynchronizedMessagesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        // ApiController validates the required nullable date fields before this executes.
+        var res = await msgDelService.DeleteAsync(
+            teamId,
+            channelId,
+            request.FromDate!.Value,
+            request.ToDate!.Value,
+            cancellationToken);
+
+        return StatusCode(
+            res.StatusCode,
+            res);
     }
 }

@@ -21,6 +21,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMinioBucketInitializerService, MinioBucketInitializerService>();
         services.AddScoped<IMessageService, MessageService>();
         services.AddScoped<IMessageExportService, MessageExportService>();
+        services.AddScoped<IMessageDeletionService, MessageDeletionService>();
         services.AddScoped<ITeamsService, TeamsService>();
         services.AddScoped<IWebhookUrlService, WebhookUrlService>();
         services.AddScoped<IAccessHubApiKeyRepository, AccessHubApiKeyRepository>();

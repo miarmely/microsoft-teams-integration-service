@@ -55,4 +55,16 @@ public interface IMessageRepository : IBaseRepository
         DateTimeOffset? fromDate,
         DateTimeOffset? toDate,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Gets tracked messages and their media within an inclusive creation-date range.</summary>
+    Task<IReadOnlyCollection<TeamsMessage>> GetForDeletionAsync(
+        string teamId,
+        string channelId,
+        DateTimeOffset fromDate,
+        DateTimeOffset toDate,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Marks messages for
+    ///  deletion. Related media rows are deleted by database cascade.</summary>
+    void DeleteRange(IEnumerable<TeamsMessage> messages);
 }

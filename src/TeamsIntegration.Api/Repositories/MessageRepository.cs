@@ -145,4 +145,28 @@ public sealed class MessageRepository(
 
         return messages;
     }
+
+    public async Task<IReadOnlyCollection<TeamsMessage>> GetForDeletionAsync(
+        string teamId,
+        string channelId,
+        DateTimeOffset fromDate,
+        DateTimeOffset toDate,
+        CancellationToken cancellationToken = default)
+    {
+        return await DbCtx.TeamsMessages
+            .AsSplitQuery()
+            .Include(message => message.Media)
+            .Where(message => message.TeamId == teamId
+                && message.ChannelId == channelId
+                && message.MessageCreatedAt >= fromDate
+                && message.MessageCreatedAt <= toDate)
+            .OrderBy(message => message.MessageCreatedAt)
+            .ThenBy(message => message.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public void DeleteRange(IEnumerable<TeamsMessage> messages)
+    {
+        DbCtx.TeamsMessages.RemoveRange(messages);
+    }
 }

@@ -352,6 +352,20 @@ public sealed class MinioObjectStorageService(
 
             throw;
         }
+        catch (ObjectNotFoundException)
+        {
+            // Deletion is idempotent: the desired state has already been reached.
+            logger.LogInformation(
+                "MinIO object was already absent. (Bucket: {BucketName}, Object: {ObjectName})",
+                _minioOptions.BucketName,
+                objectName);
+
+            return new()
+            {
+                IsSuccess = true,
+                StatusCode = StatusCodes.Status204NoContent
+            };
+        }
         catch (AccessDeniedException ex)
         {
             logger.LogError(
