@@ -4603,11 +4603,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\user\\Desktop\\ARCHIEVE\\Software\\MKS DevO\\teams-integration-service\\src\\TeamsIntegration.Api\\TeamsIntegration.Api.csproj",
+      "projectUniqueName": "C:\\Users\\user\\Desktop\\ARCHIEVE\\Software\\MKS DevO\\Projects\\1_Microsoft_Teams_Integration_Service_Project\\teams-integration-service\\src\\TeamsIntegration.Api\\TeamsIntegration.Api.csproj",
       "projectName": "TeamsIntegration.Api",
-      "projectPath": "C:\\Users\\user\\Desktop\\ARCHIEVE\\Software\\MKS DevO\\teams-integration-service\\src\\TeamsIntegration.Api\\TeamsIntegration.Api.csproj",
+      "projectPath": "C:\\Users\\user\\Desktop\\ARCHIEVE\\Software\\MKS DevO\\Projects\\1_Microsoft_Teams_Integration_Service_Project\\teams-integration-service\\src\\TeamsIntegration.Api\\TeamsIntegration.Api.csproj",
       "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\user\\Desktop\\ARCHIEVE\\Software\\MKS DevO\\teams-integration-service\\src\\TeamsIntegration.Api\\obj\\",
+      "outputPath": "C:\\Users\\user\\Desktop\\ARCHIEVE\\Software\\MKS DevO\\Projects\\1_Microsoft_Teams_Integration_Service_Project\\teams-integration-service\\src\\TeamsIntegration.Api\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config"
