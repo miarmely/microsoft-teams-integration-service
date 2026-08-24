@@ -35,7 +35,7 @@ services:
 
       minio:
         condition: service_healthy
-    
+
     restart: unless-stopped
 
     volumes:
@@ -47,7 +47,7 @@ services:
       MicrosoftGraph__TenantId: ${GRAPH_TENANT_ID}
       MicrosoftGraph__ClientId: ${GRAPH_CLIENT_ID}
       MicrosoftGraph__ClientSecret: ${GRAPH_CLIENT_SECRET}
-      
+
       Minio__Endpoint: minio:9000
       Minio__AccessKey: teams-admin
       Minio__SecretKey: teams-password
@@ -74,8 +74,8 @@ services:
 
       Cors__AllowedOrigins__0: ${DASHBOARD_ORIGIN:-http://localhost:3000}
 
-      ConnectionStrings__PostgreSQL: "Host=postgresql;Port=5432;Database=teams_integration;Username=postgres;Password=admin" 
-      
+      ConnectionStrings__PostgreSQL: "Host=postgresql;Port=5432;Database=teams_integration;Username=postgres;Password=admin"
+
     networks:
       - teams-network
 
@@ -98,7 +98,7 @@ services:
       - "5432:5432"
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d teams_integration"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d teams_integration" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -111,7 +111,7 @@ services:
     image: minio/minio:latest
 
     container_name: teams-minio
-    
+
     restart: unless-stopped
 
     command: server /data --console-address ":9001"
@@ -128,12 +128,7 @@ services:
       - teams-minio-data:/data
 
     healthcheck:
-      test: [
-        "CMD", 
-        "curl",
-        "-f",
-        "http://localhost:9000/minio/health/live"
-      ]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 10s
       timeout: 5s
       retries: 10
