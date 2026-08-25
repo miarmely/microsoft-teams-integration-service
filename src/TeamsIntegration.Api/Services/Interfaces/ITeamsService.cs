@@ -55,4 +55,13 @@ public interface ITeamsService
         int pageNumber = 1,
         int? pageSize = null,
         CancellationToken cancellationToken = default);
+
+    Task<ServiceResponse<ChatMessage>> SendAdaptiveCardAsync(
+        string teamId,
+        string channelId,
+        string title,
+        string? description,
+        Stream imageStream,
+        string imageContentType,
+        CancellationToken cancellationToken = default);
 }

@@ -1,3 +1,5 @@
+using System.Net;
+
 namespace TeamsIntegration.Api.Models.Responses;
 
 /// <summary>Standard envelope returned by JSON API operations.</summary>
@@ -10,15 +12,26 @@ public record ServiceResponse
     /// <summary>Human-readable failure reason; null for successful operations.</summary>
     public string? ErrorMessage { get; init; }
 
-    public static ServiceResponse CreateErrorResponse(
-        int statusCode,
-        string? errorMessage = null)
+    public static ServiceResponse Failure(
+        string errorMessage,
+        HttpStatusCode statusCode)
     {
-        return new ServiceResponse
+        return new()
         {
             IsSuccess = false,
-            StatusCode = statusCode,
+            StatusCode = (int)statusCode,
             ErrorMessage = errorMessage
+        };
+    }
+
+    public static ServiceResponse Success(
+        HttpStatusCode statusCode)
+    {
+        return new()
+        {
+            IsSuccess = true,
+            StatusCode = (int)statusCode,
+
         };
     }
 }
@@ -30,4 +43,28 @@ public record ServiceResponse<TData> : ServiceResponse
 {
     /// <summary>Endpoint result; normally null when <c>isSuccess</c> is false.</summary>
     public TData? Data { get; init; } = default;
+
+    public static new ServiceResponse<TData> Failure(
+        string errorMessage,
+        HttpStatusCode statusCode)
+    {
+        return new()
+        {
+            IsSuccess = false,
+            StatusCode = (int)statusCode,
+            ErrorMessage = errorMessage
+        };
+    }
+
+    public static ServiceResponse<TData> Success(
+        TData data,
+        HttpStatusCode statusCode)
+    {
+        return new()
+        {
+            IsSuccess = true,
+            StatusCode = (int)statusCode,
+            Data = data
+        };
+    }
 }
