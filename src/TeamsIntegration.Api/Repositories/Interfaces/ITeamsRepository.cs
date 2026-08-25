@@ -87,7 +87,7 @@ public interface ITeamsRepository
     /// (EXCEPTION-SAFE)
     /// </summary>
     /// <param name="webhookUrl">Teams Workflows webhook URL resolved for the channel.</param>
-    /// <param name="card"></param>
+    /// <param name="payload"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     Task<ServiceResponse> SendMessageV2Async(

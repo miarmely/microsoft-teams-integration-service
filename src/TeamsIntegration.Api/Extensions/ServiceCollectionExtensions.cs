@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMessageRepository, MessageRepository>();
         services.AddScoped<IMessageMediaRepository, MessageMediaRepository>();
         services.AddScoped<IWebhookUrlRepository, WebhookUrlRepository>();
+        services.AddScoped<IOutgoingMessageImageService, OutgoingMessageImageService>();
 
         services.AddScoped<ITeamsSyncService, TeamsSyncService>();
         services.AddScoped<IObjectStorageService, MinioObjectStorageService>();

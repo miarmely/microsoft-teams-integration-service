@@ -19,6 +19,7 @@ builder.Services.AddSwagger();
 builder.Services.AddMinio(builder.Configuration);
 builder.Services.AddDatabaseLogging(builder.Configuration);
 builder.Services.SetupAccessHubAuthorization(builder.Configuration);
+builder.Services.ConfigureOutgoingMessages(builder.Configuration);
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Dashboard", policy =>
@@ -66,18 +67,28 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(opts =>
-    {
-        opts.SwaggerEndpoint(
-            "/swagger/v1/swagger.json",
-            "Teams Integration API v1");
+// if (app.Environment.IsDevelopment())
+// {
+//     app.UseSwagger();
+//     app.UseSwaggerUI(opts =>
+//     {
+//         opts.SwaggerEndpoint(
+//             "/swagger/v1/swagger.json",
+//             "Teams Integration API v1");
 
-        opts.RoutePrefix = "swagger";
-    });
-}
+//         opts.RoutePrefix = "swagger";
+//     });
+// }
+
+app.UseSwagger();
+app.UseSwaggerUI(opts =>
+{
+    opts.SwaggerEndpoint(
+        "/swagger/v1/swagger.json",
+        "Teams Integration API v1");
+
+    opts.RoutePrefix = "swagger";
+});
 
 // for production
 app.UseForwardedHeaders(new ForwardedHeadersOptions

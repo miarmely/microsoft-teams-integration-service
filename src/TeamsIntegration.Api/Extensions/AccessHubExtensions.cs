@@ -75,7 +75,7 @@ public static class AccessHubExtensions
             Encoding.UTF8.GetBytes(accessHubOpts.Jwt.SecretKey));
         #endregion
 
-        #region  add "JWT Bearer" or "Api-Key" authentication
+        #region add "JWT Bearer" or "Api-Key" authentication
         services
             .AddAuthentication(opts =>
             {
@@ -191,9 +191,9 @@ public static class AccessHubExtensions
         // protect all enpoints even if they don't have "[Authorize]" attribute. (FALLBACK-POLICY)
         services.AddAuthorization(opts =>
         {
-            opts.FallbackPolicy = new AuthorizationPolicyBuilder()
-                .RequireAuthenticatedUser()
-                .Build();
+            // opts.FallbackPolicy = new AuthorizationPolicyBuilder()
+            //     .RequireAuthenticatedUser()
+            //     .Build();
         });
 
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();

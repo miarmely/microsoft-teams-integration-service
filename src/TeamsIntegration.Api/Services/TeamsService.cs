@@ -1,6 +1,8 @@
 
 using System.Data;
 using System.Net;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Graph.Models;
 using TeamsIntegration.Api.Models.Dtos;
 using TeamsIntegration.Api.Models.Requests;
@@ -16,7 +18,7 @@ public sealed class TeamsService(
     ITeamsRepository teamsRepo,
     IMessageMediaService messageMediaService,
     IWebhookUrlService webhookUrlService,
-    OutgoingMessageImageService outgoingMsgImgService,
+    IOutgoingMessageImageService outgoingMsgImgService,
     ILogger<TeamsService> logger) : ITeamsService
 {
     public Task<ServiceResponse<MediaContent>> GetMessageMediaAsync(
@@ -240,40 +242,49 @@ public sealed class TeamsService(
             }
             #endregion
 
-            #region set message (EXCEPTION-SAFE)
-            var title = string.IsNullOrWhiteSpace(req.Title) ?
-                string.Empty
-                : $"<strong>{WebUtility.HtmlEncode(req.Title)}</strong>";
+            #region set message (adaptive-card) (EXCEPTION-SAFE)
+            var cardBody = new List<object>();
 
-            var contentParts = req.Content
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(WebUtility.HtmlEncode);
-
-            var content = string.Join(
-                "<br/><br/>",
-                contentParts);  // add spaces between "message paragraphs"
-
-            var messageParts = new[]
+            // set message title
+            if (!string.IsNullOrWhiteSpace(req.Title))
+                cardBody.Add(new AdaptiveCardTextBlock
                 {
-                    title,
-                    content
-                }
-                .Where(x => !string.IsNullOrWhiteSpace(x));
+                    Text = req.Title.Trim(),
+                    Weight = "Bolder",
+                    Size = "Medium"
+                });
 
-            var message = string.Join(
-                "<br/><br/>",
-                messageParts);  // add spaces between "message parts"
+            // set message body
+            foreach (var content in req.Content)
+            {
+                if (string.IsNullOrWhiteSpace(content)) continue;
+
+                cardBody.Add(new AdaptiveCardTextBlock
+                {
+                    Text = content.Trim()
+                });
+            }
+
+            foreach (var image in preparedImages)
+                cardBody.Add(new AdaptiveCardImage
+                {
+                    Url = image.Url,
+                    AltText = image.FileName
+                });
+
+            cardBody.Add(new AdaptiveCardImage
+            {
+                Url = "https://adaptivecards.io/content/cats/1.png",
+                AltText = "Public image test",
+                Size = "Medium"
+            });
 
             var workflowRequest = new TeamsWorkflowMessageV2Request
             {
-                Message = message,
-                Images = preparedImages
-                    .Select(pi => new TeamsWorkflowImageV2Request
-                    {
-                        Url = pi.Url,
-                        AltText = pi.FileName
-                    })
-                    .ToArray()
+                Card = new AdaptiveCardV2
+                {
+                    Body = cardBody
+                }
             };
             #endregion
 

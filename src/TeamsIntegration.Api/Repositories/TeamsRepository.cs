@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
@@ -12,7 +14,16 @@ using TeamsIntegration.Api.Utilities;
 
 namespace TeamsIntegration.Api.Repositories;
 
-public class TeamsRepository(
+public partial class TeamsRepository
+{
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+}
+
+public partial class TeamsRepository(
     GraphServiceClient graphClient,
     ILogger<TeamsRepository> logger,
     HttpClient httpClient) : ITeamsRepository
@@ -656,6 +667,7 @@ public class TeamsRepository(
             using var teamsRes = await httpClient.PostAsJsonAsync(
                 webhookUrl,
                 payload,
+                JsonOptions,
                 cancellationToken);
 
             if (!teamsRes.IsSuccessStatusCode)
@@ -678,12 +690,6 @@ public class TeamsRepository(
                         : responseBody
                 };
             }
-
-            logger.LogInformation(
-                "Message with images sent to Teams Channel. " +
-                "(StatusCode: {StatusCode})",
-                (int)teamsRes.StatusCode);
-
             #endregion
 
             return new ServiceResponse
