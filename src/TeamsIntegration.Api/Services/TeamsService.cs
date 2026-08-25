@@ -1,9 +1,10 @@
 
 using System.Data;
+using System.Net;
 using Microsoft.Graph.Models;
-using TeamsIntegration.Api.Entities;
 using TeamsIntegration.Api.Models.Dtos;
 using TeamsIntegration.Api.Models.Requests;
+using TeamsIntegration.Api.Models.Requests.V2;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Repositories.Interfaces;
 using TeamsIntegration.Api.Services.Interfaces;
@@ -15,6 +16,7 @@ public sealed class TeamsService(
     ITeamsRepository teamsRepo,
     IMessageMediaService messageMediaService,
     IWebhookUrlService webhookUrlService,
+    OutgoingMessageImageService outgoingMsgImgService,
     ILogger<TeamsService> logger) : ITeamsService
 {
     public Task<ServiceResponse<MediaContent>> GetMessageMediaAsync(
@@ -157,6 +159,186 @@ public sealed class TeamsService(
         #endregion
 
         return res;
+    }
+
+    public async Task<ServiceResponse<MessageSendResponse>> SendMessageWithImagesAsync(
+        TeamsSendMessageWithImagesRequest req,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(req);
+
+        try
+        {
+            #region validate parameters (EXCEPTION-SAFE)
+            if (string.IsNullOrWhiteSpace(req.TeamId))
+                return new ServiceResponse<MessageSendResponse>
+                {
+                    IsSuccess = false,
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    ErrorMessage = "TeamId is required."
+                };
+
+            if (string.IsNullOrWhiteSpace(req.ChannelId))
+                return new ServiceResponse<MessageSendResponse>
+                {
+                    IsSuccess = false,
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    ErrorMessage = "ChannelId is required."
+                };
+
+            var hasTitle = !string.IsNullOrWhiteSpace(req.Title);
+            var hasContent = req.Content.Any(x => !string.IsNullOrWhiteSpace(x));
+            var hasImages = req.Images.Count > 0;
+
+            if (!hasTitle
+                && !hasContent
+                && !hasImages)
+                return new ServiceResponse<MessageSendResponse>
+                {
+                    IsSuccess = false,
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    ErrorMessage = "At least one title, content or image is required."
+                };
+            #endregion
+
+            #region resolve "workflow webhook" (EXCEPTION-SAFE)
+            var webhookRes = await webhookUrlService.GetByChannelAsync(
+                req.TeamId,
+                req.ChannelId,
+                cancellationToken);
+
+            if (!webhookRes.IsSuccess
+                || webhookRes.Data == null
+                || string.IsNullOrWhiteSpace(webhookRes.Data.Url))
+                return new ServiceResponse<MessageSendResponse>
+                {
+                    IsSuccess = false,
+                    StatusCode = StatusCodes.Status404NotFound,
+                    ErrorMessage = "No Teams workflow webhook is configured " +
+                        "for the specified team and channel."
+                };
+            #endregion
+
+            #region prepare "images" (EXCEPTION-SAFE)
+            var preparedImages = Array.Empty<OutgoingMessageImage>();
+
+            if (hasImages)
+            {
+                var imageRes = await outgoingMsgImgService.PrepareAsync(
+                    req.Images,
+                    cancellationToken);
+
+                if (!imageRes.IsSuccess)
+                    return new ServiceResponse<MessageSendResponse>
+                    {
+                        IsSuccess = false,
+                        StatusCode = imageRes.StatusCode,
+                        ErrorMessage = imageRes.ErrorMessage
+                    };
+
+                preparedImages = imageRes.Data?.ToArray() ?? [];
+            }
+            #endregion
+
+            #region set message (EXCEPTION-SAFE)
+            var title = string.IsNullOrWhiteSpace(req.Title) ?
+                string.Empty
+                : $"<strong>{WebUtility.HtmlEncode(req.Title)}</strong>";
+
+            var contentParts = req.Content
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(WebUtility.HtmlEncode);
+
+            var content = string.Join(
+                "<br/><br/>",
+                contentParts);  // add spaces between "message paragraphs"
+
+            var messageParts = new[]
+                {
+                    title,
+                    content
+                }
+                .Where(x => !string.IsNullOrWhiteSpace(x));
+
+            var message = string.Join(
+                "<br/><br/>",
+                messageParts);  // add spaces between "message parts"
+
+            var workflowRequest = new TeamsWorkflowMessageV2Request
+            {
+                Message = message,
+                Images = preparedImages
+                    .Select(pi => new TeamsWorkflowImageV2Request
+                    {
+                        Url = pi.Url,
+                        AltText = pi.FileName
+                    })
+                    .ToArray()
+            };
+            #endregion
+
+            #region send message (EXCEPTION-SAFE)
+            var sendRes = await teamsRepo.SendMessageV2Async(
+                webhookRes.Data.Url,
+                workflowRequest,
+                cancellationToken);
+
+            if (!sendRes.IsSuccess)
+            {
+                logger.LogWarning(
+                    "Teams v2 message delivery failed. " +
+                    "(TeamId: {TeamId}, ChannelId: {ChannelId}, Error: {Error})",
+                    req.TeamId,
+                    req.ChannelId,
+                    sendRes.ErrorMessage);
+
+                return new ServiceResponse<MessageSendResponse>
+                {
+                    IsSuccess = false,
+                    StatusCode = sendRes.StatusCode,
+                    ErrorMessage = sendRes.ErrorMessage
+                };
+            }
+
+            logger.LogInformation(
+                "Teams v2 message successfully submitted. " +
+                "(TeamId: {TeamId}, ChannelId: {ChannelId}, ImageCount: {ImageCount})",
+                req.TeamId,
+                req.ChannelId,
+                preparedImages.Length);
+            #endregion
+
+            return new ServiceResponse<MessageSendResponse>
+            {
+                IsSuccess = true,
+                StatusCode = StatusCodes.Status200OK,
+                Data = new MessageSendResponse
+                {
+                    MessagesSendedSuccessfull = 1,
+                    MessagesFailedWhenSending = 0
+                }
+            };
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Unexpected error while sending Teams v2 message. " +
+                "(TeamId: {TeamId}, ChannelId: {ChannelId})",
+                req.TeamId,
+                req.ChannelId);
+
+            return new ServiceResponse<MessageSendResponse>
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status500InternalServerError,
+                ErrorMessage = "An unexpected error occurred while sending the Teams message."
+            };
+        }
     }
 
     public async Task<ServiceResponse<IReadOnlyCollection<TeamResponse>>> GetTeamsAsync(

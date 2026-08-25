@@ -2,10 +2,10 @@ using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
 using Microsoft.Kiota.Abstractions;
-using TeamsIntegration.Api.Entities;
 using TeamsIntegration.Api.Mappings;
 using TeamsIntegration.Api.Models.Dtos;
 using TeamsIntegration.Api.Models.Requests;
+using TeamsIntegration.Api.Models.Requests.V2;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Repositories.Interfaces;
 using TeamsIntegration.Api.Utilities;
@@ -638,6 +638,104 @@ public class TeamsRepository(
                 IsSuccess = false,
                 StatusCode = StatusCodes.Status500InternalServerError,
                 ErrorMessage = "Unexpected error occurred while sending message."
+            };
+        }
+    }
+
+    public async Task<ServiceResponse> SendMessageV2Async(
+        string webhookUrl,
+        TeamsWorkflowMessageV2Request payload,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(webhookUrl);
+        ArgumentNullException.ThrowIfNull(payload);
+
+        try
+        {
+            #region send message to Teams channel
+            using var teamsRes = await httpClient.PostAsJsonAsync(
+                webhookUrl,
+                payload,
+                cancellationToken);
+
+            if (!teamsRes.IsSuccessStatusCode)
+            {
+                var responseBody = await teamsRes.Content.ReadAsStringAsync(
+                    cancellationToken);
+
+                logger.LogWarning(
+                    "Message with images sending request to Teams Channel failed. " +
+                    "(StatusCode: {StatusCode}, Response: {Response})",
+                    (int)teamsRes.StatusCode,
+                    responseBody);
+
+                return new ServiceResponse
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)teamsRes.StatusCode,
+                    ErrorMessage = string.IsNullOrWhiteSpace(responseBody) ?
+                        "Teams workflow rejected the message sending request."
+                        : responseBody
+                };
+            }
+
+            logger.LogInformation(
+                "Message with images sent to Teams Channel. " +
+                "(StatusCode: {StatusCode})",
+                (int)teamsRes.StatusCode);
+
+            #endregion
+
+            return new ServiceResponse
+            {
+                IsSuccess = true,
+                StatusCode = (int)teamsRes.StatusCode
+            };
+
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(
+                ex,
+                "HTTP error while calling Teams message sending workflow.");
+
+            return new ServiceResponse
+            {
+                IsSuccess = false,
+                StatusCode = ex.StatusCode.HasValue ?
+                    (int)ex.StatusCode.Value
+                    : StatusCodes.Status503ServiceUnavailable,
+                ErrorMessage = "Teams workflow is unavailable."
+            };
+        }
+        catch (TaskCanceledException ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Teams message sending workflow request timed out.");
+
+            return new ServiceResponse
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status504GatewayTimeout,
+                ErrorMessage = "Teams message sending workflow request timed out."
+            };
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Unexpected Teams message sending workflow error.");
+
+            return new ServiceResponse
+            {
+                IsSuccess = false,
+                StatusCode = StatusCodes.Status500InternalServerError,
+                ErrorMessage = "Unexpected error while communicating with Teams message sending workflow."
             };
         }
     }
