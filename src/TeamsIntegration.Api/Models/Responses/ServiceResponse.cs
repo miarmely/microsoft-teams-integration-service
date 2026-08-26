@@ -24,6 +24,18 @@ public record ServiceResponse
         };
     }
 
+    public static ServiceResponse Failure(
+        string errorMessage,
+        int statusCode)
+    {
+        return new()
+        {
+            IsSuccess = false,
+            StatusCode = statusCode,
+            ErrorMessage = errorMessage
+        };
+    }
+
     public static ServiceResponse Success(
         HttpStatusCode statusCode)
     {
@@ -31,6 +43,17 @@ public record ServiceResponse
         {
             IsSuccess = true,
             StatusCode = (int)statusCode,
+
+        };
+    }
+
+    public static ServiceResponse Success(
+        int statusCode)
+    {
+        return new()
+        {
+            IsSuccess = true,
+            StatusCode = statusCode,
 
         };
     }
@@ -56,6 +79,18 @@ public record ServiceResponse<TData> : ServiceResponse
         };
     }
 
+    public static new ServiceResponse<TData> Failure(
+        string errorMessage,
+        int statusCode)
+    {
+        return new()
+        {
+            IsSuccess = false,
+            StatusCode = statusCode,
+            ErrorMessage = errorMessage
+        };
+    }
+
     public static ServiceResponse<TData> Success(
         TData data,
         HttpStatusCode statusCode)
@@ -64,6 +99,18 @@ public record ServiceResponse<TData> : ServiceResponse
         {
             IsSuccess = true,
             StatusCode = (int)statusCode,
+            Data = data
+        };
+    }
+
+    public static ServiceResponse<TData> Success(
+        TData data,
+        int statusCode)
+    {
+        return new()
+        {
+            IsSuccess = true,
+            StatusCode = statusCode,
             Data = data
         };
     }

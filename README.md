@@ -35,7 +35,7 @@ To use your company logo, add it to `frontend/public/company-logo.svg`, then rep
 
 ## Overview
 
-Microsoft Teams Integration Service is an enterprise backend microservice that integrates Microsoft Teams with internal business systems. It synchronizes channel messages and hosted media using the Microsoft Graph API, stores message metadata in PostgreSQL, uploads media files to MinIO Object Storage, and enables sending Adaptive Card notifications to Microsoft Teams channels through Workflow Webhooks.
+Microsoft Teams Integration Service is an enterprise backend microservice that integrates Microsoft Teams with internal business systems. It synchronizes channel messages and hosted media using the Microsoft Graph API, stores message metadata in PostgreSQL, stores synchronized media in MinIO Object Storage, uploads outgoing card images to SharePoint, and enables sending Adaptive Card notifications to Microsoft Teams channels through Workflow Webhooks.
 
 The application follows a layered architecture with a strong focus on maintainability, scalability, and production-ready deployment.
 
@@ -59,6 +59,7 @@ The application follows a layered architecture with a strong focus on maintainab
 - Send Adaptive Card notifications
 - Microsoft Teams Workflow Webhook integration
 - Channel-specific notification support
+- SharePoint-hosted images for outgoing Adaptive Cards
 - HTTP-based notification service
 
 ---
@@ -309,6 +310,29 @@ PostgreSQL
 ---
 
 # Docker Deployment
+
+## SharePoint image storage
+
+Outgoing Adaptive Card images are uploaded to a dedicated SharePoint document
+library. MinIO remains responsible for durable copies of media synchronized from
+Teams.
+
+Before starting the application:
+
+1. Create a dedicated SharePoint site and document-library folder matching
+   `SHAREPOINT_FOLDER_PATH`.
+2. Grant the Entra application the Microsoft Graph application permission
+   `Sites.Selected` and admin consent.
+3. Grant that application `write` access to the selected SharePoint site.
+4. Set `SHAREPOINT_SITE_ID` and `SHAREPOINT_DRIVE_ID` in `.env`.
+5. Ensure anonymous read-only sharing is allowed for the tenant and selected
+   site. Teams Workflows must be able to retrieve the image without a bearer
+   token.
+
+The service creates an anonymous view link for every outgoing image and adds
+`download=1` for card rendering. Anonymous links should be treated as secrets;
+anyone possessing a link can read its image. If anonymous sharing is disabled,
+the upload is rolled back and message delivery fails.
 
 Run the complete environment:
 

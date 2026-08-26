@@ -3,10 +3,10 @@ namespace TeamsIntegration.Api.Models.Dtos;
 public sealed record OutgoingMessageImage
 {
     /// <summary>
-    /// Object name of Image on MinIO. <br/>
-    /// It will using for delete images from MinIO after Teams Message delivered to channel.
+    /// Microsoft Graph drive item identifier for the image in SharePoint.
     /// </summary>
-    public required string ObjectName { get; init; }
+    public required string StorageItemId { get; init; }
+    public required string StoragePath { get; init; }
     public required string Url { get; init; }
     public required string FileName { get; init; }
     public required string ContentType { get; init; }

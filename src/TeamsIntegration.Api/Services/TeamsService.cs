@@ -344,13 +344,6 @@ public sealed partial class TeamsService
                     AltText = image.FileName
                 });
 
-            cardBody.Add(new AdaptiveCardImage
-            {
-                Url = "https://adaptivecards.io/content/cats/1.png",
-                AltText = "Public image test",
-                Size = "Medium"
-            });
-
             var workflowRequest = new TeamsWorkflowMessageV2Request
             {
                 Card = new AdaptiveCardV2

@@ -8,7 +8,7 @@ namespace TeamsIntegration.Api.Services;
 
 
 public sealed partial class OutgoingMessageImageService(
-    IObjectStorageService objectStorage,
+    ISharePointImageStorageService sharePointStorage,
     IOptions<OutgoingMessageOptions> outgoingMsgOpts,
     ILogger<OutgoingMessageImageService> logger) : IOutgoingMessageImageService
 {
@@ -19,6 +19,21 @@ public sealed partial class OutgoingMessageImageService(
         "image/png",
         "image/webp"
     ];
+
+    /// <summary>
+    /// Delete "uploaded images" from SharePoint.
+    /// </summary>
+    /// <param name="images"></param>
+    /// <returns></returns>
+    private async Task RollBackAsync(
+        IEnumerable<OutgoingMessageImage> images)
+    {
+        // rollback from "last added" to first
+        foreach (var image in images.Reverse())
+            await sharePointStorage.DeleteAsync(
+                image.StorageItemId,
+                CancellationToken.None);
+    }
 }
 
 public sealed partial class OutgoingMessageImageService
@@ -27,6 +42,8 @@ public sealed partial class OutgoingMessageImageService
         IReadOnlyCollection<IFormFile> images,
         CancellationToken cancellationToken = default)
     {
+        var prepared = new List<OutgoingMessageImage>();
+
         try
         {
             #region validate parameters 
@@ -37,16 +54,9 @@ public sealed partial class OutgoingMessageImageService
                     StatusCode = StatusCodes.Status400BadRequest,
                     ErrorMessage = $"Maximum {_outgoingMsgOpts.MaxImageCount} images are allowed."
                 };
-            #endregion
-
-            #region prepare "OutgoingMessageImage" list (EXCEPTION-SAFE)
-            var prepared = new List<OutgoingMessageImage>();
 
             foreach (var image in images)
             {
-                #region check "image" whether valid (EXCECPTION-SAFE)
-                cancellationToken.ThrowIfCancellationRequested();
-
                 if (image.Length <= 0)
                     return new()
                     {
@@ -70,53 +80,44 @@ public sealed partial class OutgoingMessageImageService
                         StatusCode = StatusCodes.Status415UnsupportedMediaType,
                         ErrorMessage = $"Image type '{image.ContentType}' is not supported."
                     };
-                #endregion
+            }
+            #endregion
 
-                #region upload "image" to MinIO (EXCEPTION-SAFE)
+            #region prepare "OutgoingMessageImage" list (EXCEPTION-SAFE)
+            foreach (var image in images)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var extension = Path.GetExtension(image.FileName);
-
-                var objectName = $"outgoing-messages/{DateTime.UtcNow:yyyy/MM/dd}/"
+                var relativePath = $"{DateTime.UtcNow:yyyy/MM/dd}/"
                     + $"{Guid.NewGuid():N}{extension}";
 
                 await using var stream = image.OpenReadStream();
 
-                var uploadRes = await objectStorage.UploadAsync(
+                var storageRes = await sharePointStorage.UploadAsync(
                     stream,
-                    objectName,
+                    relativePath,
                     image.ContentType,
-                    image.Length,
                     cancellationToken);
 
-                if (!uploadRes.IsSuccess)
+                if (!storageRes.IsSuccess
+                    || storageRes.Data == null)
+                {
+                    await RollBackAsync(prepared);
+
                     return new()
                     {
                         IsSuccess = false,
-                        StatusCode = uploadRes.StatusCode,
-                        ErrorMessage = uploadRes.ErrorMessage
+                        StatusCode = storageRes.StatusCode,
+                        ErrorMessage = storageRes.ErrorMessage
                     };
-                #endregion
-
-                #region create a "presigned download url" (EXCEPTION-SAFE)
-                var urlRes = await objectStorage.CreatePresignedDownloadUrlAsync(
-                    objectName,
-                    TimeSpan.FromMinutes(_outgoingMsgOpts.PresignedUrlExpirationMinutes),
-                    cancellationToken);
-
-                if (!urlRes.IsSuccess
-                    || string.IsNullOrWhiteSpace(urlRes.Data))
-                    return new()
-                    {
-                        IsSuccess = false,
-                        StatusCode = urlRes.StatusCode,
-                        ErrorMessage = urlRes.ErrorMessage
-                            ?? "Could not create image download URL."
-                    };
-                #endregion
+                }
 
                 prepared.Add(new OutgoingMessageImage
                 {
-                    ObjectName = objectName,
-                    Url = urlRes.Data,
+                    StorageItemId = storageRes.Data.ItemId,
+                    StoragePath = storageRes.Data.RelativePath,
+                    Url = storageRes.Data.ImageUrl,
                     FileName = image.FileName,
                     ContentType = image.ContentType
                 });
@@ -130,8 +131,16 @@ public sealed partial class OutgoingMessageImageService
                 Data = prepared
             };
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            await RollBackAsync(prepared);
+
+            throw;
+        }
         catch (Exception ex)
         {
+            await RollBackAsync(prepared);
+
             logger.LogWarning(
                 ex,
                 "Unexpected error occured when preparing message images.");

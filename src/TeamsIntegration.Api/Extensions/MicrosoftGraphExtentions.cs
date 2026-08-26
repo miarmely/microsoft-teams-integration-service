@@ -1,4 +1,5 @@
 using Azure.Identity;
+using Azure.Core;
 using Microsoft.Extensions.Options;
 using Microsoft.Graph;
 using TeamsIntegration.Api.Configuration;
@@ -25,21 +26,26 @@ public static class MicrosoftGraphExtentions
                 !string.IsNullOrWhiteSpace(opt.ClientSecret),
                 "'MicrosoftGraph:ClientSecret' is required in 'application.json' file!");
 
-        services.AddSingleton<GraphServiceClient>(serviceProvider =>
+        services.AddSingleton<TokenCredential>(serviceProvider =>
         {
             var options = serviceProvider
                 .GetRequiredService<IOptions<MicrosoftGraphOptions>>()
                 .Value;
 
-            var credential = new ClientSecretCredential(
+            return new ClientSecretCredential(
                 options.TenantId,
                 options.ClientId,
                 options.ClientSecret
             );
+        });
 
-            return new GraphServiceClient(credential, [
-                "https://graph.microsoft.com/.default"
-            ]);
+        services.AddSingleton<GraphServiceClient>(serviceProvider =>
+        {
+            var credential = serviceProvider.GetRequiredService<TokenCredential>();
+
+            return new GraphServiceClient(
+                credential,
+                ["https://graph.microsoft.com/.default"]);
         });
 
         return services;
