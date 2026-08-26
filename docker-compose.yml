@@ -53,37 +53,37 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
 
-      MicrosoftGraph__TenantId: ${GRAPH_TENANT_ID}
-      MicrosoftGraph__ClientId: ${GRAPH_CLIENT_ID}
-      MicrosoftGraph__ClientSecret: ${GRAPH_CLIENT_SECRET}
+      MicrosoftGraph__TenantId: ${GRAPH_TENANT_ID:?Set GRAPH_TENANT_ID in .env}
+      MicrosoftGraph__ClientId: ${GRAPH_CLIENT_ID:?Set GRAPH_CLIENT_ID in .env}
+      MicrosoftGraph__ClientSecret: ${GRAPH_CLIENT_SECRET:?Set GRAPH_CLIENT_SECRET in .env}
 
       Minio__Endpoint: minio:9000
-      Minio__AccessKey: teams-admin
-      Minio__SecretKey: teams-password
-      Minio__BucketName: teams-integration
+      Minio__AccessKey: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env}
+      Minio__SecretKey: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
+      Minio__BucketName: ${MINIO_BUCKET_NAME:-teams-integration}
       Minio__UseSsl: "false"
       Minio__PresignedUrlExpirationDay: "7"
 
-      AccessHub__BaseUrl: ${ACCESSHUB_BASE_URL}
-      AccessHub__ApplicationId: ${ACCESSHUB_APPLICATION_ID}
-      AccessHub__ClientId: ${ACCESSHUB_CLIENT_ID}
-      AccessHub__Username: ${ACCESSHUB_USERNAME}
-      AccessHub__Password: ${ACCESSHUB_PASSWORD}
+      AccessHub__BaseUrl: ${ACCESSHUB_BASE_URL:?Set ACCESSHUB_BASE_URL in .env}
+      AccessHub__ApplicationId: ${ACCESSHUB_APPLICATION_ID:?Set ACCESSHUB_APPLICATION_ID in .env}
+      AccessHub__ClientId: ${ACCESSHUB_CLIENT_ID:?Set ACCESSHUB_CLIENT_ID in .env}
+      AccessHub__Username: ${ACCESSHUB_USERNAME:?Set ACCESSHUB_USERNAME in .env}
+      AccessHub__Password: ${ACCESSHUB_PASSWORD:?Set ACCESSHUB_PASSWORD in .env}
 
-      AccessHub__Jwt__SecretKey: ${ACCESSHUB_JWT_SECRET_KEY}
+      AccessHub__Jwt__SecretKey: ${ACCESSHUB_JWT_SECRET_KEY:?Set ACCESSHUB_JWT_SECRET_KEY in .env}
       AccessHub__Jwt__Algorithm: HS256
       AccessHub__Jwt__PermissionClaimType: permission
       AccessHub__Jwt__ValidateIssuer: true
-      AccessHub__Jwt__Issuer: ${ACCESSHUB_JWT_ISSUER}
+      AccessHub__Jwt__Issuer: ${ACCESSHUB_JWT_ISSUER:?Set ACCESSHUB_JWT_ISSUER in .env}
       AccessHub__Jwt__ValidateAudience: true
-      AccessHub__Jwt__Audience: ${ACCESSHUB_JWT_AUDIENCE}
+      AccessHub__Jwt__Audience: ${ACCESSHUB_JWT_AUDIENCE:?Set ACCESSHUB_JWT_AUDIENCE in .env}
       AccessHub__Jwt__ClockSkewSeconds: "30"
 
       HttpsRedirection__Enabled: "false"
 
       Cors__AllowedOrigins__0: ${DASHBOARD_ORIGIN:-http://localhost:3000}
 
-      ConnectionStrings__PostgreSQL: "Host=postgresql;Port=5432;Database=teams_integration;Username=postgres;Password=admin"
+      ConnectionStrings__PostgreSQL: "Host=postgresql;Port=5432;Database=${POSTGRES_DB:-teams_integration};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}"
 
     networks:
       - teams-network
@@ -98,9 +98,9 @@ services:
     restart: unless-stopped
 
     environment:
-      POSTGRES_DB: teams_integration
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: ${POSTGRES_DB:-teams_integration}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
 
     volumes:
       - teams-postgres-data:/var/lib/postgresql
@@ -109,7 +109,7 @@ services:
       - "5432:5432"
 
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d teams_integration" ]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -130,8 +130,8 @@ services:
     command: server /data --console-address ":9001"
 
     environment:
-      MINIO_ROOT_USER: teams-admin
-      MINIO_ROOT_PASSWORD: teams-password
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
 
     ports:
       - "9000:9000"

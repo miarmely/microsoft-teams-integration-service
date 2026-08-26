@@ -4,7 +4,17 @@
 
 ## Enterprise dashboard
 
-The repository includes a separate React and TypeScript dashboard in `frontend/`. It provides persistent AccessHub login, live Microsoft Teams messages, synchronized database messages, channel synchronization, and Adaptive Card message delivery.
+The repository includes a separate React and TypeScript dashboard in `frontend/`. It provides session-based AccessHub login, live Microsoft Teams messages, synchronized database messages, channel synchronization, and Adaptive Card message delivery.
+
+Create your private local configuration and replace every placeholder with a
+real value before running the stack:
+
+```bash
+cp .env.example .env
+```
+
+Generate strong, unique values for `POSTGRES_PASSWORD`,
+`MINIO_ROOT_PASSWORD`, and `ACCESSHUB_JWT_SECRET_KEY`. Never commit `.env`.
 
 Run the complete stack:
 
@@ -327,14 +337,21 @@ Current implementation:
 
 - Microsoft Graph authentication uses **Client Credentials Flow**.
 - Microsoft Teams Workflow uses secure webhook endpoints.
+- Dashboard users authenticate through AccessHub.
+- API clients can authenticate with an AccessHub bearer token or API key.
+- Permission policies protect application endpoints.
+- Browser access tokens are kept in session storage and are removed when the
+  browser tab is closed.
 
-> **Authentication and Authorization for the REST API are planned for a future release.**
+The included Compose file is a local-development baseline. For production, use
+a secrets manager, TLS, restricted container networks, trusted proxy settings,
+database backups, and an explicit container-image update policy. See
+[`SECURITY.md`](SECURITY.md) for vulnerability reporting and deployment notes.
 
 ---
 
 # Future Improvements
 
-- JWT Authentication
 - Role-based Authorization
 - Health Checks
 - Rate Limiting
@@ -359,7 +376,10 @@ Additional documentation available for this project:
 
 # License
 
-This project is intended for internal enterprise use.
+No open-source license has been granted yet. Unless a `LICENSE` file is added,
+the repository remains publicly visible but all rights are reserved. Choose and
+add a license before inviting third parties to copy, modify, or redistribute the
+project.
 
 ---
 

@@ -15,24 +15,24 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 /**
- * Owns the current authentication token and persists it across browser restarts.
+ * Owns the current authentication token for the current browser tab.
  * Descendants access this state through the useAuth hook.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   // The initializer runs once and restores a previous authenticated session.
   const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem(TOKEN_KEY),
+    sessionStorage.getItem(TOKEN_KEY),
   );
   const value = useMemo(
     () => ({
       token,
       signIn: (next: string) => {
         // Keep storage and React state synchronized.
-        localStorage.setItem(TOKEN_KEY, next);
+        sessionStorage.setItem(TOKEN_KEY, next);
         setToken(next);
       },
       signOut: () => {
-        localStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem(TOKEN_KEY);
         setToken(null);
       },
     }),
