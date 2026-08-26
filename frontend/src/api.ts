@@ -2,6 +2,8 @@ import type {
   ChannelResponse,
   GraphMessage,
   LoginResponse,
+  MicrosoftGraphAuthorizationUrl,
+  MicrosoftGraphOAuthStatus,
   MessageDeletionResult,
   SendResult,
   ServiceResponse,
@@ -68,6 +70,28 @@ async function request<T>(
   return body.data as T;
 }
 
+/** Sends multipart form data without overriding the browser-generated boundary. */
+async function requestForm<T>(
+  path: string,
+  form: FormData,
+  token: string,
+): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  const body = (await response.json()) as ServiceResponse<T>;
+  if (!response.ok || !body.isSuccess) {
+    throw new ApiResponseError(
+      body.errorMessage || `Request failed (${response.status}).`,
+      response.status,
+      body.data,
+    );
+  }
+  return body.data as T;
+}
+
 export interface DownloadedMedia {
   blob: Blob;
   fileName?: string;
@@ -126,6 +150,24 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ username, password }),
       }),
+  microsoftGraphStatus: (token: string) =>
+    request<MicrosoftGraphOAuthStatus>(
+      "/api/microsoft-graph/oauth/status",
+      {},
+      token,
+    ),
+  microsoftGraphAuthorizationUrl: (token: string) =>
+    request<MicrosoftGraphAuthorizationUrl>(
+      "/api/microsoft-graph/oauth/authorization-url",
+      {},
+      token,
+    ),
+  disconnectMicrosoftGraph: (token: string) =>
+    request<undefined>(
+      "/api/microsoft-graph/oauth",
+      { method: "DELETE" },
+      token,
+    ),
   /** Loads the teams available to the current user. */
   teams: (token: string) => request<Team[]>("/api/Teams", {}, token),
   /** Loads channels only for the team selected by the user. */
@@ -283,4 +325,20 @@ export const api = {
       },
       token,
     ),
+  sendHostedAdaptiveCard: (
+    token: string,
+    teamId: string,
+    channelId: string,
+    title: string,
+    description: string,
+    image: File,
+  ) => {
+    const form = new FormData();
+    form.set("teamId", teamId);
+    form.set("channelId", channelId);
+    form.set("title", title);
+    form.set("description", description);
+    form.set("image", image);
+    return requestForm<GraphMessage>("/api/Teams/adaptive-card", form, token);
+  },
 };

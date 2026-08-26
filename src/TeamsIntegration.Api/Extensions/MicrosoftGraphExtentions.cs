@@ -1,8 +1,10 @@
-using Azure.Identity;
 using Azure.Core;
 using Microsoft.Extensions.Options;
 using Microsoft.Graph;
+using Microsoft.Identity.Client;
 using TeamsIntegration.Api.Configuration;
+using TeamsIntegration.Api.Services;
+using TeamsIntegration.Api.Services.Interfaces;
 
 namespace TeamsIntegration.Api.Extensions;
 
@@ -24,20 +26,36 @@ public static class MicrosoftGraphExtentions
                 "'MicrosoftGraph:ClientId' is required in 'application.json' file!")
             .Validate(opt =>
                 !string.IsNullOrWhiteSpace(opt.ClientSecret),
-                "'MicrosoftGraph:ClientSecret' is required in 'application.json' file!");
+                "'MicrosoftGraph:ClientSecret' is required in 'application.json' file!")
+            .Validate(opt =>
+                Uri.TryCreate(opt.RedirectUri, UriKind.Absolute, out _),
+                "'MicrosoftGraph:RedirectUri' must be an absolute URI.")
+            .Validate(opt =>
+                Uri.TryCreate(opt.PostLoginRedirectUri, UriKind.Absolute, out _),
+                "'MicrosoftGraph:PostLoginRedirectUri' must be an absolute URI.")
+            .Validate(opt =>
+                !string.IsNullOrWhiteSpace(opt.TokenCachePath),
+                "'MicrosoftGraph:TokenCachePath' is required.")
+            .Validate(opt => opt.DelegatedScopes.Contains("ChannelMessage.Send"),
+                "'MicrosoftGraph:DelegatedScopes' must include 'ChannelMessage.Send'.")
+            .ValidateOnStart();
 
-        services.AddSingleton<TokenCredential>(serviceProvider =>
+        services.AddSingleton<IConfidentialClientApplication>(serviceProvider =>
         {
             var options = serviceProvider
                 .GetRequiredService<IOptions<MicrosoftGraphOptions>>()
                 .Value;
 
-            return new ClientSecretCredential(
-                options.TenantId,
-                options.ClientId,
-                options.ClientSecret
-            );
+            return ConfidentialClientApplicationBuilder
+                .Create(options.ClientId)
+                .WithClientSecret(options.ClientSecret)
+                .WithAuthority($"https://login.microsoftonline.com/{options.TenantId}")
+                .WithRedirectUri(options.RedirectUri)
+                .Build();
         });
+
+        services.AddSingleton<IMicrosoftGraphOAuthService, MicrosoftGraphOAuthService>();
+        services.AddSingleton<TokenCredential, MicrosoftGraphDelegatedTokenCredential>();
 
         services.AddSingleton<GraphServiceClient>(serviceProvider =>
         {

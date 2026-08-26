@@ -21,7 +21,7 @@ public sealed partial class TeamsService(
     ITeamsRepository teamsRepo,
     IMessageMediaService messageMediaService,
     IWebhookUrlService webhookUrlService,
-    IOutgoingMessageImageService outgoingMsgImgService,
+    IServiceProvider serviceProvider,
     GraphServiceClient graphClient,
     ILogger<TeamsService> logger) : ITeamsService
 {
@@ -298,6 +298,9 @@ public sealed partial class TeamsService
 
             if (hasImages)
             {
+                var outgoingMsgImgService = serviceProvider
+                    .GetRequiredService<IOutgoingMessageImageService>();
+
                 var imageRes = await outgoingMsgImgService.PrepareAsync(
                     req.Images,
                     cancellationToken);
@@ -790,6 +793,14 @@ public sealed partial class TeamsService
             return ServiceResponse<ChatMessage>.Failure(
                 "Request was cancelled.",
                 HttpStatusCode.BadRequest);
+        }
+        catch (MicrosoftGraphAuthenticationRequiredException ex)
+        {
+            logger.LogWarning(ex, "Microsoft Graph login is required before sending an Adaptive Card.");
+
+            return ServiceResponse<ChatMessage>.Failure(
+                ex.Message,
+                HttpStatusCode.Unauthorized);
         }
         catch (ODataError ex)
         {

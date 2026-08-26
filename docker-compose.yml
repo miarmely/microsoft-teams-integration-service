@@ -57,11 +57,9 @@ services:
       MicrosoftGraph__TenantId: ${GRAPH_TENANT_ID:?Set GRAPH_TENANT_ID in .env}
       MicrosoftGraph__ClientId: ${GRAPH_CLIENT_ID:?Set GRAPH_CLIENT_ID in .env}
       MicrosoftGraph__ClientSecret: ${GRAPH_CLIENT_SECRET:?Set GRAPH_CLIENT_SECRET in .env}
-
-      SharePoint__SiteId: ${SHAREPOINT_SITE_ID:?Set SHAREPOINT_SITE_ID in .env}
-      SharePoint__DriveId: ${SHAREPOINT_DRIVE_ID:?Set SHAREPOINT_DRIVE_ID in .env}
-      SharePoint__FolderPath: ${SHAREPOINT_FOLDER_PATH:-teams-integration/outgoing-images}
-      SharePoint__AppendDownloadQuery: "true"
+      MicrosoftGraph__RedirectUri: ${GRAPH_REDIRECT_URI:-http://localhost:8080/api/microsoft-graph/oauth/callback}
+      MicrosoftGraph__PostLoginRedirectUri: ${DASHBOARD_ORIGIN:-http://localhost:3000}
+      MicrosoftGraph__TokenCachePath: /root/.aspnet/DataProtection-Keys/microsoft-graph-token-cache.bin
 
       Minio__Endpoint: minio:9000
       Minio__AccessKey: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env}

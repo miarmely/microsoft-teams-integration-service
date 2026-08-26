@@ -9,6 +9,14 @@ export interface LoginResponse {
   accessToken: string;
   expiresIn: number;
 }
+export interface MicrosoftGraphOAuthStatus {
+  isConnected: boolean;
+  username?: string;
+  accountId?: string;
+}
+export interface MicrosoftGraphAuthorizationUrl {
+  authorizationUrl: string;
+}
 export interface Team {
   id: string;
   displayName?: string;

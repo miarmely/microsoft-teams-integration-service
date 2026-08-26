@@ -14,13 +14,11 @@ builder.Services.AddMemoryCache();
 builder.Services.AddApplicationServices();
 builder.Services.AddPostgreSql(builder.Configuration);
 builder.Services.AddMicrosoftGraph(builder.Configuration);
-builder.Services.AddSharePointImageStorage(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwagger();
 builder.Services.AddMinio(builder.Configuration);
 builder.Services.AddDatabaseLogging(builder.Configuration);
 builder.Services.SetupAccessHubAuthorization(builder.Configuration);
-builder.Services.ConfigureOutgoingMessages(builder.Configuration);
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Dashboard", policy =>

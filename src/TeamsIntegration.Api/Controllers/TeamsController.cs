@@ -39,27 +39,6 @@ public class TeamsController(
     }
 
 
-    [HttpPost("message/send/v2")]
-    [Consumes("multipart/form-data")]
-    [HasPermission(TeamsIntegrationPermissions.SendMessage)]
-    [ProducesResponseType(typeof(ServiceResponse<MessageSendResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ServiceResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ServiceResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ServiceResponse), StatusCodes.Status413PayloadTooLarge)]
-    [ProducesResponseType(typeof(ServiceResponse), StatusCodes.Status415UnsupportedMediaType)]
-    public async Task<IActionResult> SendMessageV2(
-        [FromForm] TeamsSendMessageWithImagesRequest req,
-        CancellationToken cancellationToken = default)
-    {
-        var res = await teamsService.SendMessageWithImagesAsync(
-            req,
-            cancellationToken);
-
-        return StatusCode(
-            res.StatusCode,
-            res);
-    }
-
     /// <summary>Gets all Microsoft Teams available to the service principal.</summary>
     /// <param name="cancellationToken">Cancels the Microsoft Graph request.</param>
     /// <returns>A service envelope containing teams ordered by display name.</returns>

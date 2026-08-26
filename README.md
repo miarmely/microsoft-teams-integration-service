@@ -311,28 +311,33 @@ PostgreSQL
 
 # Docker Deployment
 
-## SharePoint image storage
+## Microsoft Graph delegated login
 
-Outgoing Adaptive Card images are uploaded to a dedicated SharePoint document
-library. MinIO remains responsible for durable copies of media synchronized from
-Teams.
+Normal channel posting is performed on behalf of one connected Microsoft work
+account. The Entra app registration must have a **Web** redirect URI that exactly
+matches `GRAPH_REDIRECT_URI` and these delegated Microsoft Graph permissions:
 
-Before starting the application:
+- `User.Read`
+- `Team.ReadBasic.All`
+- `Channel.ReadBasic.All`
+- `ChannelMessage.Read.All`
+- `ChannelMessage.Send`
 
-1. Create a dedicated SharePoint site and document-library folder matching
-   `SHAREPOINT_FOLDER_PATH`.
-2. Grant the Entra application the Microsoft Graph application permission
-   `Sites.Selected` and admin consent.
-3. Grant that application `write` access to the selected SharePoint site.
-4. Set `SHAREPOINT_SITE_ID` and `SHAREPOINT_DRIVE_ID` in `.env`.
-5. Ensure anonymous read-only sharing is allowed for the tenant and selected
-   site. Teams Workflows must be able to retrieve the image without a bearer
-   token.
+Grant tenant admin consent where required. `offline_access` is requested during
+login so MSAL can silently renew short-lived access tokens. The user can still
+be required to sign in again if consent is withdrawn, the refresh token is
+revoked, or tenant policy requires reauthentication.
 
-The service creates an anonymous view link for every outgoing image and adds
-`download=1` for card rendering. Anonymous links should be treated as secrets;
-anyone possessing a link can read its image. If anonymous sharing is disabled,
-the upload is rolled back and message delivery fails.
+For the default local Docker deployment, register this Web redirect URI:
+
+```text
+http://localhost:8080/api/microsoft-graph/oauth/callback
+```
+
+After signing in to the dashboard, open **Send** and select **Connect Microsoft
+Teams**. The selected account must be a member of the target team and permitted
+to post in the target channel. The encrypted MSAL cache is stored in the same
+persistent Docker volume as the ASP.NET Data Protection keys.
 
 Run the complete environment:
 
@@ -359,7 +364,8 @@ During application startup:
 
 Current implementation:
 
-- Microsoft Graph authentication uses **Client Credentials Flow**.
+- Microsoft Graph uses delegated Authorization Code flow with PKCE, encrypted
+  server-side MSAL caching, and silent token renewal.
 - Microsoft Teams Workflow uses secure webhook endpoints.
 - Dashboard users authenticate through AccessHub.
 - API clients can authenticate with an AccessHub bearer token or API key.
