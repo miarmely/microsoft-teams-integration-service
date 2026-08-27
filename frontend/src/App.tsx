@@ -10,14 +10,19 @@ import { TeamsPage } from "./pages/TeamsPage";
 import { ChannelsPage } from "./pages/ChannelsPage";
 import { ExportPage } from "./pages/ExportPage";
 import { DeleteMessagesPage } from "./pages/DeleteMessagesPage";
+import { ConnectTeamsPage } from "./pages/ConnectTeamsPage";
+import { RequireTeamsConnection } from "./components/RequireTeamsConnection";
+import { TeamsConnectionProvider } from "./teamsConnection";
 
 /** Guards dashboard routes and renders them inside the authenticated shell. */
 function Protected() {
   const { token } = useAuth();
   return token ? (
-    <AppShell>
-      <Outlet />
-    </AppShell>
+    <TeamsConnectionProvider>
+      <AppShell>
+        <Outlet />
+      </AppShell>
+    </TeamsConnectionProvider>
   ) : (
     <Navigate to="/login" replace />
   );
@@ -29,18 +34,18 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route element={<Protected />}>
-        <Route path="/teams" element={<TeamsPage />} />
-        <Route path="/channels" element={<ChannelsPage />} />
-        <Route path="/messages/live" element={<MessagesPage mode="live" />} />
-        <Route
-          path="/messages/stored"
-          element={<MessagesPage mode="stored" />}
-        />
-        <Route path="/synchronize" element={<SyncPage />} />
-        <Route path="/export" element={<ExportPage />} />
-        <Route path="/messages/delete" element={<DeleteMessagesPage />} />
-        <Route path="/send" element={<SendPage />} />
-        <Route path="/webhooks" element={<WebhooksPage />} />
+        <Route path="/connect-teams" element={<ConnectTeamsPage />} />
+        <Route element={<RequireTeamsConnection />}>
+          <Route path="/teams" element={<TeamsPage />} />
+          <Route path="/channels" element={<ChannelsPage />} />
+          <Route path="/messages/live" element={<MessagesPage mode="live" />} />
+          <Route path="/messages/stored" element={<MessagesPage mode="stored" />} />
+          <Route path="/synchronize" element={<SyncPage />} />
+          <Route path="/export" element={<ExportPage />} />
+          <Route path="/messages/delete" element={<DeleteMessagesPage />} />
+          <Route path="/send" element={<SendPage />} />
+          <Route path="/webhooks" element={<WebhooksPage />} />
+        </Route>
       </Route>
       <Route path="*" element={<Navigate to="/messages/live" replace />} />
     </Routes>

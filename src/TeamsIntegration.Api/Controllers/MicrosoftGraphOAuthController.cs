@@ -6,6 +6,10 @@ using Microsoft.Identity.Client;
 using TeamsIntegration.Api.Authorization.Attributes;
 using TeamsIntegration.Api.Authorization.Models;
 using TeamsIntegration.Api.Configuration;
+
+
+
+
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Services.Interfaces;
 
@@ -22,6 +26,12 @@ public sealed partial class MicrosoftGraphOAuthController(
     private readonly MicrosoftGraphOptions _graphOpts = graphOpts.Value;
 
     /// <summary>
+    /// 
+    /// 
+    /// 
+    /// 
+    /// 
+    /// 
     /// Redirect "Login Page" of Teams Service.
     /// </summary>
     /// <param name="statusMsg"></param>
@@ -37,7 +47,7 @@ public sealed partial class MicrosoftGraphOAuthController(
             $"microsoftGraph={graphStatus}"
             : $"{query}&microsoftGraph={graphStatus}";
 
-        redirectUri.Path = $"{redirectUri.Path.TrimEnd('/')}/send";
+        redirectUri.Path = $"{redirectUri.Path.TrimEnd('/')}/connect-teams";
 
         return Redirect(redirectUri.Uri.AbsoluteUri);
     }

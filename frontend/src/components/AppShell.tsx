@@ -8,6 +8,7 @@ import {
   Radio,
   RefreshCw,
   Send,
+  PlugZap,
   Trash2,
   Users,
   X,
@@ -18,6 +19,7 @@ import { useAuth } from "../auth";
 import { Brand } from "./Brand";
 
 const nav = [
+  { to: "/connect-teams", label: "Connect to Teams", icon: PlugZap },
   { to: "/teams", label: "Teams", icon: Users },
   { to: "/channels", label: "Channels", icon: Rows3 },
   { to: "/messages/live", label: "Live messages", icon: Radio },

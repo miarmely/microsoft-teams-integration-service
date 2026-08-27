@@ -1,12 +1,11 @@
-import { CheckCircle2, Image, Link2, LoaderCircle, LogOut, Send } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { CheckCircle2, Image, LoaderCircle, Send } from "lucide-react";
+import { useState, type FormEvent } from "react";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { WorkspaceControls } from "../components/WorkspaceControls";
 import { useDirectory } from "../hooks/useDirectory";
-import type { MicrosoftGraphOAuthStatus } from "../types";
 
-/** Connects Microsoft Graph and sends an Adaptive Card with hosted image bytes. */
+/** Sends an Adaptive Card with hosted image bytes through Microsoft Graph. */
 export function SendPage() {
   const { token } = useAuth();
   const {
@@ -16,8 +15,6 @@ export function SendPage() {
     error: dirError,
     loadChannels,
   } = useDirectory(token!);
-  const [graphStatus, setGraphStatus] = useState<MicrosoftGraphOAuthStatus | null>(null);
-  const [graphLoading, setGraphLoading] = useState(true);
   const [teamId, setTeamId] = useState("");
   const [channelId, setChannelId] = useState("");
   const [title, setTitle] = useState("");
@@ -26,46 +23,6 @@ export function SendPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
-  useEffect(() => {
-    const result = new URLSearchParams(window.location.search).get("microsoftGraph");
-    if (result === "connected") setSuccess("Microsoft Teams account connected.");
-    if (result === "error") setError("Microsoft Teams login could not be completed.");
-
-    api
-      .microsoftGraphStatus(token!)
-      .then(setGraphStatus)
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : "Could not read Microsoft Graph status."),
-      )
-      .finally(() => setGraphLoading(false));
-  }, [token]);
-
-  const connectMicrosoft = async () => {
-    setGraphLoading(true);
-    setError("");
-    try {
-      const result = await api.microsoftGraphAuthorizationUrl(token!);
-      window.location.assign(result.authorizationUrl);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Microsoft login could not start.");
-      setGraphLoading(false);
-    }
-  };
-
-  const disconnectMicrosoft = async () => {
-    setGraphLoading(true);
-    setError("");
-    try {
-      await api.disconnectMicrosoftGraph(token!);
-      setGraphStatus({ isConnected: false });
-      setSuccess("Microsoft Teams account disconnected.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Microsoft account could not be disconnected.");
-    } finally {
-      setGraphLoading(false);
-    }
-  };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -88,8 +45,6 @@ export function SendPage() {
     }
   };
 
-  const connected = graphStatus?.isConnected === true;
-
   return (
     <div className="page narrow">
       <div className="page-heading">
@@ -104,42 +59,14 @@ export function SendPage() {
         <div className="source-badge live"><Send /> Microsoft Graph</div>
       </div>
 
-      {((connected && dirError) || error) && (
+      {(dirError || error) && (
         <div className="alert error">{error || dirError}</div>
       )}
       {success && (
         <div className="alert success"><CheckCircle2 /> {success}</div>
       )}
 
-      <section className="card form-card graph-connection">
-        <div>
-          <span className="eyebrow">Microsoft Teams account</span>
-          <h2>{connected ? "Connected" : "Login required"}</h2>
-          <p className="muted">
-            {connected
-              ? graphStatus.username || "A Microsoft work account is connected."
-              : "Connect a work account that can post to the target channel."}
-          </p>
-        </div>
-        {connected ? (
-          <button type="button" onClick={disconnectMicrosoft} disabled={graphLoading}>
-            <LogOut /> Disconnect
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="primary"
-            onClick={connectMicrosoft}
-            disabled={graphLoading}
-          >
-            {graphLoading ? <LoaderCircle className="spin" /> : <Link2 />}
-            Connect Microsoft Teams
-          </button>
-        )}
-      </section>
-
-      {connected && (
-        <section className="card form-card">
+      <section className="card form-card">
           <form onSubmit={submit}>
             <WorkspaceControls
               directory={directory}
@@ -192,8 +119,7 @@ export function SendPage() {
               </button>
             </div>
           </form>
-        </section>
-      )}
+      </section>
     </div>
   );
 }
