@@ -5,7 +5,11 @@ namespace TeamsIntegration.Api.Services.Interfaces;
 
 public interface IMicrosoftGraphOAuthService
 {
-    string CreateAuthorizationUrl();
+    /// <summary>
+    /// Get "authorization url" for sign in to Microsoft by OAuth2.0 method.
+    /// </summary>
+    /// <returns></returns>
+    ServiceResponse<MicrosoftGraphAuthorizationUrlResponse> CreateAuthorizationUrl();
 
     Task CompleteAuthorizationAsync(
         string code,

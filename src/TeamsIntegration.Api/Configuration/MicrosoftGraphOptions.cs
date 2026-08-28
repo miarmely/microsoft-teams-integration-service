@@ -9,6 +9,10 @@ public class MicrosoftGraphOptions
     public required string RedirectUri { get; init; }
     public string PostLoginRedirectUri { get; init; } = "http://localhost:3000";
     public string TokenCachePath { get; init; } = "data/microsoft-graph-token-cache.bin";
+    /// <summary>
+    /// Required delegated permissions.
+    /// Required permissions which must be granted by Microsoft Entra Center.
+    /// </summary>
     public IReadOnlyCollection<string> DelegatedScopes { get; init; } =
     [
         "User.Read",

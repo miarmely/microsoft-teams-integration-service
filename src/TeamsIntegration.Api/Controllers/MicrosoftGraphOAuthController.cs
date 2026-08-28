@@ -6,10 +6,6 @@ using Microsoft.Identity.Client;
 using TeamsIntegration.Api.Authorization.Attributes;
 using TeamsIntegration.Api.Authorization.Models;
 using TeamsIntegration.Api.Configuration;
-
-
-
-
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Services.Interfaces;
 
@@ -26,12 +22,6 @@ public sealed partial class MicrosoftGraphOAuthController(
     private readonly MicrosoftGraphOptions _graphOpts = graphOpts.Value;
 
     /// <summary>
-    /// 
-    /// 
-    /// 
-    /// 
-    /// 
-    /// 
     /// Redirect "Login Page" of Teams Service.
     /// </summary>
     /// <param name="statusMsg"></param>
@@ -59,14 +49,9 @@ public sealed partial class MicrosoftGraphOAuthController
     [HasPermission(TeamsIntegrationPermissions.SendMessage)]
     public ActionResult<ServiceResponse<MicrosoftGraphAuthorizationUrlResponse>> GetAuthorizationUrl()
     {
-        var response = ServiceResponse<MicrosoftGraphAuthorizationUrlResponse>.Success(
-            new MicrosoftGraphAuthorizationUrlResponse
-            {
-                AuthorizationUrl = oauthService.CreateAuthorizationUrl()
-            },
-            StatusCodes.Status200OK);
+        var res = oauthService.CreateAuthorizationUrl();
 
-        return Ok(response);
+        return StatusCode(res.StatusCode, res);
     }
 
 
@@ -78,7 +63,7 @@ public sealed partial class MicrosoftGraphOAuthController
         [FromQuery] string? error,
         CancellationToken cancellationToken)
     {
-        // if there is "any error" or "no response"
+        // if there is exists "any error" or "no response"
         if (!string.IsNullOrWhiteSpace(error)
             || string.IsNullOrWhiteSpace(code)
             || string.IsNullOrWhiteSpace(state))
