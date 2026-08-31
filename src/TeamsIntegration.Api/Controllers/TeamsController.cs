@@ -5,7 +5,6 @@ using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Services.Interfaces;
 using Microsoft.Graph.Models;
-using Microsoft.Graph.Drives.Item.Items.Item.Workbook.Names.Item.RangeNamespace.ResizedRangeWithDeltaRowsWithDeltaColumns;
 
 namespace TeamsIntegration.Api.Controllers;
 
@@ -14,31 +13,6 @@ namespace TeamsIntegration.Api.Controllers;
 public class TeamsController(
     ITeamsService teamsService) : ControllerBase
 {
-    /// <summary>Sends one or more Adaptive Card messages to a Teams channel.</summary>
-    /// <remarks>
-    /// Resolves the workflow webhook from PostgreSQL using the supplied team and channel.
-    /// Returns 404 when no webhook is configured for that channel.
-    /// </remarks>
-    /// <param name="req">Target team/channel and the Adaptive Card messages to send.</param>
-    /// <param name="cancellationToken">Cancels pending workflow requests.</param>
-    /// <returns>Counts of messages delivered successfully and messages that failed.</returns>
-    [HttpPost("message/send")]
-    [HasPermission(TeamsIntegrationPermissions.SendMessage)]
-    [ProducesResponseType(typeof(ServiceResponse<MessageSendResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ServiceResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ServiceResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> SendMessagesToChannel(
-       [FromBody] TeamsSendMultipleMessageRequest req,
-       CancellationToken cancellationToken = default)
-    {
-        var res = await teamsService.SendMessagesToChannelAsync(
-            req,
-            cancellationToken);
-
-        return StatusCode(res.StatusCode, res);
-    }
-
-
     /// <summary>Gets all Microsoft Teams available to the service principal.</summary>
     /// <param name="cancellationToken">Cancels the Microsoft Graph request.</param>
     /// <returns>A service envelope containing teams ordered by display name.</returns>

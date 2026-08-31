@@ -8,7 +8,6 @@ public sealed class TeamsDbContext(
 {
     public DbSet<TeamsMessage> TeamsMessages => Set<TeamsMessage>();
     public DbSet<MessageMedia> MessageMedias => Set<MessageMedia>();
-    public DbSet<WebhookUrl> WebhookUrls => Set<WebhookUrl>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

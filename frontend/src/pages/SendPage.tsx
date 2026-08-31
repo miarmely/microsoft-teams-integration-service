@@ -19,25 +19,27 @@ export function SendPage() {
   const [channelId, setChannelId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [image, setImage] = useState<File | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!image) return;
+    if (images.length === 0) return;
     setLoading(true);
     setError("");
     setSuccess("");
     try {
       await api.sendHostedAdaptiveCard(
-        token!, teamId, channelId, title, description, image,
+        token!, teamId, channelId, title, description, images,
       );
       setSuccess("Adaptive Card sent successfully through Microsoft Graph.");
       setTitle("");
       setDescription("");
-      setImage(null);
+      setImages([]);
+      setFileInputKey((key) => key + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Message could not be sent.");
     } finally {
@@ -100,19 +102,24 @@ export function SendPage() {
               />
             </label>
             <label>
-              <span>Hosted image</span>
+              <span>Hosted images</span>
               <input
+                key={fileInputKey}
                 required
                 type="file"
+                multiple
                 accept="image/png,image/jpeg,image/webp"
-                onChange={(event) => setImage(event.target.files?.[0] ?? null)}
+                onChange={(event) => setImages(Array.from(event.target.files ?? []))}
               />
+              {images.length > 0 && (
+                <small>{images.length} image{images.length === 1 ? "" : "s"} selected</small>
+              )}
             </label>
             <div className="send-actions">
-              <span className="muted"><Image /> The image is embedded as Teams hosted content.</span>
+              <span className="muted"><Image /> Images are embedded as Teams hosted content.</span>
               <button
                 className="primary"
-                disabled={!teamId || !channelId || !title.trim() || !image || loading}
+                disabled={!teamId || !channelId || !title.trim() || images.length === 0 || loading}
               >
                 {loading ? <LoaderCircle className="spin" /> : <Send />}
                 {loading ? "Sending..." : "Send message"}

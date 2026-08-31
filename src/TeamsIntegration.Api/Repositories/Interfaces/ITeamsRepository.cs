@@ -1,7 +1,5 @@
 using Microsoft.Graph.Models;
 using TeamsIntegration.Api.Models.Dtos;
-using TeamsIntegration.Api.Models.Requests;
-using TeamsIntegration.Api.Models.Requests.V2;
 using TeamsIntegration.Api.Models.Responses;
 
 namespace TeamsIntegration.Api.Repositories.Interfaces;
@@ -69,29 +67,4 @@ public interface ITeamsRepository
         string hostedContentId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Send "text message" to a Teams channel by webhook. <br/> 
-    /// (EXCEPTION-SAFE)
-    /// </summary>
-    /// <param name="webhookUrl">Teams Workflows webhook URL resolved for the channel.</param>
-    /// <param name="card"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    Task<ServiceResponse> SendMessageAsync(
-        string webhookUrl,
-        TeamsWorkflowMessageRequest card,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Send "message with images" to a Teams channel by webhook. <br/> 
-    /// (EXCEPTION-SAFE)
-    /// </summary>
-    /// <param name="webhookUrl">Teams Workflows webhook URL resolved for the channel.</param>
-    /// <param name="payload"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    Task<ServiceResponse> SendMessageV2Async(
-        string webhookUrl,
-        TeamsWorkflowMessageV2Request payload,
-        CancellationToken cancellationToken = default);
 }

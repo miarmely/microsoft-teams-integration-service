@@ -3,25 +3,19 @@ using System.Data;
 using System.Net;
 using System.Text.Json;
 using Microsoft.Graph;
-using Microsoft.Graph.DeviceManagement.VirtualEndpoint.DeviceImages;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
-using Microsoft.Graph.Models.Security;
 using TeamsIntegration.Api.Models.Dtos;
 using TeamsIntegration.Api.Models.Requests;
-using TeamsIntegration.Api.Models.Requests.V2;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Repositories.Interfaces;
 using TeamsIntegration.Api.Services.Interfaces;
-using TeamsIntegration.Api.Utilities;
 
 namespace TeamsIntegration.Api.Services;
 
 public sealed partial class TeamsService(
     ITeamsRepository teamsRepo,
     IMessageMediaService messageMediaService,
-    IWebhookUrlService webhookUrlService,
-    IServiceProvider serviceProvider,
     GraphServiceClient graphClient,
     ILogger<TeamsService> logger) : ITeamsService
 {
@@ -168,6 +162,7 @@ public sealed partial class TeamsService
         return messageMedia;
     }
 
+#if false // Removed: legacy workflow-webhook delivery path.
     public async Task<ServiceResponse<MessageSendResponse>> SendMessagesToChannelAsync(
         TeamsSendMultipleMessageRequest req,
         CancellationToken cancellationToken = default)
@@ -476,6 +471,8 @@ public sealed partial class TeamsService
             };
         }
     }
+
+#endif
 
     public async Task<ServiceResponse<IReadOnlyCollection<TeamResponse>>> GetTeamsAsync(
         CancellationToken cancellationToken = default)

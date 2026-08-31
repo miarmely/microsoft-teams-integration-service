@@ -2,7 +2,6 @@ using Microsoft.Graph.Models;
 using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Models.Dtos;
-using TeamsIntegration.Api.Models.Requests.V2;
 
 namespace TeamsIntegration.Api.Services.Interfaces;
 
@@ -13,28 +12,6 @@ public interface ITeamsService
         string channelId,
         string messageId,
         string hostedContentId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Send multiple message to specific a channel by Webhook. <br/>
-    /// (EXCEPTION-SAFE)
-    /// </summary>
-    /// <param name="req"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    Task<ServiceResponse<MessageSendResponse>> SendMessagesToChannelAsync(
-        TeamsSendMultipleMessageRequest req,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Send message with images to specific a channel by Webhook. <br/> 
-    /// (EXCEPTION-SAFE)
-    /// </summary>
-    /// <param name="req"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    Task<ServiceResponse<MessageSendResponse>> SendMessageWithImagesAsync(
-        TeamsSendMessageWithImagesRequest req,
         CancellationToken cancellationToken = default);
 
     Task<ServiceResponse<IReadOnlyCollection<TeamResponse>>> GetTeamsAsync(

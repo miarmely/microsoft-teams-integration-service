@@ -1,32 +1,18 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
 using Microsoft.Kiota.Abstractions;
 using TeamsIntegration.Api.Mappings;
 using TeamsIntegration.Api.Models.Dtos;
-using TeamsIntegration.Api.Models.Requests;
-using TeamsIntegration.Api.Models.Requests.V2;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Repositories.Interfaces;
 using TeamsIntegration.Api.Utilities;
 
 namespace TeamsIntegration.Api.Repositories;
 
-public partial class TeamsRepository
-{
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-    };
-}
-
 public partial class TeamsRepository(
     GraphServiceClient graphClient,
-    ILogger<TeamsRepository> logger,
-    HttpClient httpClient) : ITeamsRepository
+    ILogger<TeamsRepository> logger) : ITeamsRepository
 {
     public async Task<ServiceResponse<IReadOnlyCollection<Team>>> GetTeamsAsync(
         CancellationToken cancellationToken = default)
@@ -553,6 +539,7 @@ public partial class TeamsRepository(
         }
     }
 
+#if false // Removed: legacy workflow-webhook delivery path.
     public async Task<ServiceResponse> SendMessageAsync(
         string webhookUrl,
         TeamsWorkflowMessageRequest payload,
@@ -745,4 +732,5 @@ public partial class TeamsRepository(
             };
         }
     }
+#endif
 }

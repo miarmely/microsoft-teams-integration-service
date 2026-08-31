@@ -814,12 +814,6 @@ a {
   color: var(--muted);
   font-size: 13px;
 }
-.webhook-form {
-  margin-bottom: 34px;
-}
-.webhook-form > .section-title {
-  margin-bottom: 24px;
-}
 .secondary-button {
   display: inline-flex;
   align-items: center;
@@ -832,76 +826,6 @@ a {
   font-weight: 600;
 }
 .secondary-button svg {
-  width: 16px;
-}
-.webhook-list-section > .section-title {
-  margin: 0 2px 14px;
-}
-.webhook-list {
-  display: grid;
-  gap: 10px;
-}
-.webhook-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: #fff;
-}
-.webhook-icon {
-  flex: 0 0 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  border-radius: 9px;
-  color: var(--blue);
-  background: #eaf4fd;
-}
-.webhook-icon svg {
-  width: 18px;
-}
-.webhook-details {
-  min-width: 0;
-  flex: 1;
-  display: grid;
-  gap: 5px;
-}
-.webhook-channel,
-.webhook-details small {
-  color: var(--muted);
-  font-size: 12px;
-}
-.webhook-details code {
-  overflow-wrap: anywhere;
-  color: #41576f;
-  font: 12px/1.5 Consolas, monospace;
-}
-.webhook-actions {
-  display: flex;
-  gap: 7px;
-}
-.webhook-actions button {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: #557089;
-  background: #fff;
-}
-.webhook-actions button:hover {
-  color: var(--blue);
-  border-color: #9dbbd4;
-}
-.webhook-actions button.danger:hover {
-  color: var(--red);
-  border-color: #e6a8b3;
-  background: #fff5f6;
-}
-.webhook-actions svg {
   width: 16px;
 }
 .directory-card {

@@ -85,19 +85,6 @@ export interface SyncResult {
   synchronizedMediaCount: number;
   synchronizedAt: string;
 }
-export interface SendResult {
-  messagesSendedSuccessfull: number;
-  messagesFailedWhenSending: number;
-}
-export interface WebhookUrl {
-  id: string;
-  teamId: string;
-  channelId: string;
-  url: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface FailedMessageDeletion {
   messageId: string;
   graphMessageId: string;

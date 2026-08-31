@@ -5,12 +5,10 @@ import type {
   MicrosoftGraphAuthorizationUrl,
   MicrosoftGraphOAuthStatus,
   MessageDeletionResult,
-  SendResult,
   ServiceResponse,
   StoredMessage,
   SyncResult,
   Team,
-  WebhookUrl,
 } from "./types";
 
 /** Preserves structured API details when an operation fails or partly succeeds. */
@@ -177,41 +175,6 @@ export const api = {
       {},
       token,
     ),
-  /** Returns all database-backed channel webhook assignments. */
-  webhooks: (token: string) =>
-    request<WebhookUrl[]>("/api/WebhookUrl", {}, token),
-  /** Creates a workflow webhook assignment for one channel. */
-  createWebhook: (
-    token: string,
-    teamId: string,
-    channelId: string,
-    url: string,
-  ) =>
-    request<WebhookUrl>(
-      "/api/WebhookUrl",
-      { method: "POST", body: JSON.stringify({ teamId, channelId, url }) },
-      token,
-    ),
-  /** Updates an existing channel webhook assignment. */
-  updateWebhook: (
-    token: string,
-    id: string,
-    teamId: string,
-    channelId: string,
-    url: string,
-  ) =>
-    request<WebhookUrl>(
-      `/api/WebhookUrl/${encodeURIComponent(id)}`,
-      { method: "PUT", body: JSON.stringify({ teamId, channelId, url }) },
-      token,
-    ),
-  /** Deletes a channel webhook assignment. */
-  deleteWebhook: (token: string, id: string) =>
-    request<undefined>(
-      `/api/WebhookUrl/${encodeURIComponent(id)}`,
-      { method: "DELETE" },
-      token,
-    ),
   /** Downloads a live message attachment from Graph through the API. */
   liveMedia: (
     token: string,
@@ -295,50 +258,20 @@ export const api = {
       },
       token,
     ),
-  /** Sends one Adaptive Card through the configured Teams workflow. */
-  send: (
-    token: string,
-    teamId: string,
-    channelId: string,
-    title: string,
-    content: string[],
-    imageUrl?: string,
-    imageAltText?: string,
-  ) =>
-    request<SendResult>(
-      "/api/Teams/message/send",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          teamId,
-          channelId,
-          messages: [
-            {
-              title: title || null,
-              content,
-              images: imageUrl
-                ? [{ imageUrl, imageAltText: imageAltText || null }]
-                : [],
-            },
-          ],
-        }),
-      },
-      token,
-    ),
   sendHostedAdaptiveCard: (
     token: string,
     teamId: string,
     channelId: string,
     title: string,
     description: string,
-    image: File,
+    images: File[],
   ) => {
     const form = new FormData();
     form.set("teamId", teamId);
     form.set("channelId", channelId);
     form.set("title", title);
     form.set("description", description);
-    form.set("image", image);
+    images.forEach((image) => form.append("images", image));
     return requestForm<GraphMessage>("/api/Teams/adaptive-card", form, token);
   },
 };

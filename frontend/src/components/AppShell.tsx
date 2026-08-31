@@ -2,7 +2,6 @@ import {
   Database,
   Archive,
   LogOut,
-  KeyRound,
   Rows3,
   Menu,
   Radio,
@@ -28,7 +27,6 @@ const nav = [
   { to: "/export", label: "Export messages", icon: Archive },
   { to: "/messages/delete", label: "Delete messages", icon: Trash2 },
   { to: "/send", label: "Send message", icon: Send },
-  { to: "/webhooks", label: "Webhook URLs", icon: KeyRound },
 ];
 
 /** Provides authenticated pages with responsive navigation and sign-out. */

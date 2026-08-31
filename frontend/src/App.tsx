@@ -5,7 +5,6 @@ import { LoginPage } from "./pages/LoginPage";
 import { MessagesPage } from "./pages/MessagesPage";
 import { SendPage } from "./pages/SendPage";
 import { SyncPage } from "./pages/SyncPage";
-import { WebhooksPage } from "./pages/WebhooksPage";
 import { TeamsPage } from "./pages/TeamsPage";
 import { ChannelsPage } from "./pages/ChannelsPage";
 import { ExportPage } from "./pages/ExportPage";
@@ -44,7 +43,6 @@ export default function App() {
           <Route path="/export" element={<ExportPage />} />
           <Route path="/messages/delete" element={<DeleteMessagesPage />} />
           <Route path="/send" element={<SendPage />} />
-          <Route path="/webhooks" element={<WebhooksPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/messages/live" replace />} />

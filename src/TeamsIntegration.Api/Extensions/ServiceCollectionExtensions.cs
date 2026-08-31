@@ -13,8 +13,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IMessageRepository, MessageRepository>();
         services.AddScoped<IMessageMediaRepository, MessageMediaRepository>();
-        services.AddScoped<IWebhookUrlRepository, WebhookUrlRepository>();
-        services.AddScoped<IOutgoingMessageImageService, OutgoingMessageImageService>();
+        services.AddScoped<ITeamsRepository, TeamsRepository>();
 
         services.AddScoped<ITeamsSyncService, TeamsSyncService>();
         services.AddScoped<IObjectStorageService, MinioObjectStorageService>();
@@ -24,7 +23,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMessageExportService, MessageExportService>();
         services.AddScoped<IMessageDeletionService, MessageDeletionService>();
         services.AddScoped<ITeamsService, TeamsService>();
-        services.AddScoped<IWebhookUrlService, WebhookUrlService>();
         services.AddScoped<IAccessHubApiKeyRepository, AccessHubApiKeyRepository>();
         services.AddScoped<IApiKeyValidationService, ApiKeyValidationService>();
 
@@ -32,11 +30,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IObjectNameFactoryService, ObjectNameFactoryService>();
         services.AddSingleton<ILogQueue, LogQueue>();
-
-        services.AddHttpClient<ITeamsRepository, TeamsRepository>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
 
         return services;
     }
