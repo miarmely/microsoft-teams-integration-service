@@ -10,6 +10,7 @@ import { ChannelsPage } from "./pages/ChannelsPage";
 import { ExportPage } from "./pages/ExportPage";
 import { DeleteMessagesPage } from "./pages/DeleteMessagesPage";
 import { ConnectTeamsPage } from "./pages/ConnectTeamsPage";
+import { LogsPage } from "./pages/LogsPage";
 import { RequireTeamsConnection } from "./components/RequireTeamsConnection";
 import { TeamsConnectionProvider } from "./teamsConnection";
 
@@ -34,6 +35,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route element={<Protected />}>
         <Route path="/connect-teams" element={<ConnectTeamsPage />} />
+        <Route path="/logs" element={<LogsPage />} />
         <Route element={<RequireTeamsConnection />}>
           <Route path="/teams" element={<TeamsPage />} />
           <Route path="/channels" element={<ChannelsPage />} />

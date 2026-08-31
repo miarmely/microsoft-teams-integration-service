@@ -1,10 +1,12 @@
 import type {
+  ApplicationLog,
   ChannelResponse,
   GraphMessage,
   LoginResponse,
   MicrosoftGraphAuthorizationUrl,
   MicrosoftGraphOAuthStatus,
   MessageDeletionResult,
+  PagedResponse,
   ServiceResponse,
   StoredMessage,
   SyncResult,
@@ -172,6 +174,13 @@ export const api = {
   channels: (token: string, teamId: string) =>
     request<ChannelResponse>(
       `/api/Teams/${encodeURIComponent(teamId)}/channels`,
+      {},
+      token,
+    ),
+  /** Reads database-backed application logs, newest first. */
+  logs: (token: string, pageNumber = 1, pageSize = 50) =>
+    request<PagedResponse<ApplicationLog>>(
+      `/api/Logs?${query({ pageNumber, pageSize })}`,
       {},
       token,
     ),

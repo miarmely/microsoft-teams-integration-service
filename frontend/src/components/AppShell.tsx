@@ -1,6 +1,7 @@
 import {
   Database,
   Archive,
+  Activity,
   LogOut,
   Rows3,
   Menu,
@@ -27,6 +28,7 @@ const nav = [
   { to: "/export", label: "Export messages", icon: Archive },
   { to: "/messages/delete", label: "Delete messages", icon: Trash2 },
   { to: "/send", label: "Send message", icon: Send },
+  { to: "/logs", label: "Application logs", icon: Activity },
 ];
 
 /** Provides authenticated pages with responsive navigation and sign-out. */

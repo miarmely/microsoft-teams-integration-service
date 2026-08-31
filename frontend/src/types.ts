@@ -103,3 +103,33 @@ export interface MessageDeletionResult {
   failures: FailedMessageDeletion[];
   completedAt: string;
 }
+
+export interface ApplicationLog {
+  id: string;
+  createdAt: string;
+  level: string;
+  category: string;
+  eventId: number;
+  eventName: string | null;
+  message: string | null;
+  exceptionType: string | null;
+  exceptionMessage: string | null;
+  stackTrace: string | null;
+  traceId: string | null;
+  spanId: string | null;
+  requestPath: string | null;
+  httpMethod: string | null;
+  propertiesJson: string | null;
+  environment: string;
+  machineName: string;
+}
+
+export interface PagedResponse<T> {
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+  items: T[];
+}
