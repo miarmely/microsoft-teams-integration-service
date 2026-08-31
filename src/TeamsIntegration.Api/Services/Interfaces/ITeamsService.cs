@@ -60,20 +60,10 @@ public interface ITeamsService
     /// Send adaptive card message to one Teams channel. <br/>
     /// (EXCEPTION-SAFE)
     /// </summary>
-    /// <param name="teamId"></param>
-    /// <param name="channelId"></param>
-    /// <param name="title"></param>
-    /// <param name="description"></param>
-    /// <param name="imageStream"></param>
-    /// <param name="imageContentType"></param>
+    /// <param name="req"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     Task<ServiceResponse<ChatMessage>> SendAdaptiveCardAsync(
-        string teamId,
-        string channelId,
-        string title,
-        string? description,
-        Stream? imageStream,
-        string? imageContentType,
+        SendAdaptiveCardRequest req,
         CancellationToken cancellationToken = default);
 }

@@ -6,5 +6,5 @@ public sealed record SendAdaptiveCardRequest
     public required string ChannelId { get; init; }
     public required string Title { get; init; }
     public string? Description { get; init; }
-    public IFormFile? Image { get; init; }
+    public IEnumerable<IFormFile> Images { get; init; } = [];
 }

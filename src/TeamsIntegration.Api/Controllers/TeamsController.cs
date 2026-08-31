@@ -5,7 +5,7 @@ using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Models.Responses;
 using TeamsIntegration.Api.Services.Interfaces;
 using Microsoft.Graph.Models;
-using TeamsIntegration.Api.Models.Requests.V2;
+using Microsoft.Graph.Drives.Item.Items.Item.Workbook.Names.Item.RangeNamespace.ResizedRangeWithDeltaRowsWithDeltaColumns;
 
 namespace TeamsIntegration.Api.Controllers;
 
@@ -176,33 +176,13 @@ public class TeamsController(
     [Consumes("multipart/form-data")]
     [HasPermission(TeamsIntegrationPermissions.SendMessage)]
     public async Task<IActionResult> SendAdaptiveCardAsync(
-        [FromForm] SendAdaptiveCardRequest request,
+        [FromForm] SendAdaptiveCardRequest req,
         CancellationToken cancellationToken)
     {
-        Stream? imageStream = null;
+        var res = await teamsService.SendAdaptiveCardAsync(
+            req,
+            cancellationToken);
 
-        try
-        {
-            if (request.Image != null)
-                imageStream = request.Image.OpenReadStream();
-
-            var res = await teamsService.SendAdaptiveCardAsync(
-                request.TeamId,
-                request.ChannelId,
-                request.Title,
-                request.Description,
-                imageStream,
-                request.Image?.ContentType,
-                cancellationToken);
-
-            return StatusCode(res.StatusCode, res);
-        }
-        finally
-        {
-            if (imageStream is not null)
-            {
-                await imageStream.DisposeAsync();
-            }
-        }
+        return StatusCode(res.StatusCode, res);
     }
 }

@@ -3,8 +3,10 @@ using System.Data;
 using System.Net;
 using System.Text.Json;
 using Microsoft.Graph;
+using Microsoft.Graph.DeviceManagement.VirtualEndpoint.DeviceImages;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
+using Microsoft.Graph.Models.Security;
 using TeamsIntegration.Api.Models.Dtos;
 using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Models.Requests.V2;
@@ -75,9 +77,57 @@ public sealed partial class TeamsService(
                 spacing = "Small"
             });
 
-
         // add images 
         if (!string.IsNullOrWhiteSpace(hostedContentTemporaryId))
+            body.Add(new
+            {
+                type = "Image",
+                url = $"../hostedContents/{hostedContentTemporaryId}/$value",
+                size = "Stretch",
+                altText = title
+            });
+
+        var adaptiveCard = new
+        {
+            type = "AdaptiveCard",
+            schema = "http://adaptivecards.io/schemas/adaptive-card.json",
+            version = "1.5",
+            body
+        };
+
+        return JsonSerializer.Serialize(adaptiveCard);
+    }
+
+    private static string BuildAdaptiveCard(
+        string title,
+        string? description,
+        string[] hostedContentTemporaryIds)
+    {
+        // add message title
+        var body = new List<object>
+        {
+            new
+            {
+                type = "TextBlock",
+                text = title,
+                size = "Large",
+                weight = "Bolder",
+                wrap = true
+            }
+        };
+
+        // add message description
+        if (!string.IsNullOrWhiteSpace(description))
+            body.Add(new
+            {
+                type = "TextBlock",
+                text = description,
+                wrap = true,
+                spacing = "Small"
+            });
+
+        // add "hosted content ids" of images 
+        foreach (var hostedContentTemporaryId in hostedContentTemporaryIds)
             body.Add(new
             {
                 type = "Image",
@@ -662,32 +712,29 @@ public sealed partial class TeamsService
     }
 
     public async Task<ServiceResponse<ChatMessage>> SendAdaptiveCardAsync(
-        string teamId,
-        string channelId,
-        string title,
-        string? description,
-        Stream? imageStream,
-        string? imageContentType,
+        SendAdaptiveCardRequest req,
         CancellationToken cancellationToken = default)
     {
+        var imageData = new Dictionary<string, (string, byte[], Stream)>();  // {hostedContentId: (imageContentType, imageBytes, imageStream), ...}
+
         try
         {
             #region validate parameters
-            if (string.IsNullOrWhiteSpace(teamId))
+            if (string.IsNullOrWhiteSpace(req.TeamId))
             {
                 return ServiceResponse<ChatMessage>.Failure(
                     "TeamId is required.",
                     HttpStatusCode.BadRequest);
             }
 
-            if (string.IsNullOrWhiteSpace(channelId))
+            if (string.IsNullOrWhiteSpace(req.ChannelId))
             {
                 return ServiceResponse<ChatMessage>.Failure(
                     "ChannelId is required.",
                     HttpStatusCode.BadRequest);
             }
 
-            if (string.IsNullOrWhiteSpace(title))
+            if (string.IsNullOrWhiteSpace(req.Title))
             {
                 return ServiceResponse<ChatMessage>.Failure(
                     "Title is required.",
@@ -695,17 +742,18 @@ public sealed partial class TeamsService
             }
             #endregion
 
-            #region create "temporary id" for "hosted content"
-            byte[]? imageBytes = null;
-            string? hostedContentTemporaryId = null;
+            #region create "hosted content ids" for "images"
+            var temporaryIdCounter = 0;
 
-            if (imageStream != null)
+            foreach (var image in req.Images)
             {
-                imageContentType = string.IsNullOrWhiteSpace(imageContentType) ?
-                    "application/octet-stream"
-                    : imageContentType;
+                var imageStream = image.OpenReadStream();
 
-                imageBytes = await ReadStreamAsync(
+                var imageContentType = string.IsNullOrWhiteSpace(image.ContentType) ?
+                    "application/octet-stream"
+                    : image.ContentType;
+
+                var imageBytes = await ReadStreamAsync(
                     imageStream,
                     cancellationToken);
 
@@ -714,17 +762,25 @@ public sealed partial class TeamsService
                         "Image is empty.",
                         HttpStatusCode.BadRequest);
 
-                hostedContentTemporaryId = "1";
+                var hostedContentTemporaryId = (++temporaryIdCounter).ToString();
+
+                imageData.Add(
+                    hostedContentTemporaryId,
+                    (imageContentType, imageBytes, imageStream));
             }
             #endregion
 
-            #region set adaptive-card "message"
-            const string attachmentId = "adaptive-card";
+            #region create "adaptive-card message"
+            // create "adaptive-card"
+            var hostedContentTemporaryIds = imageData.Keys.ToArray();
 
             var adaptiveCardJson = BuildAdaptiveCard(
-                title,
-                description,
-                hostedContentTemporaryId);
+                req.Title,
+                req.Description,
+                hostedContentTemporaryIds);
+
+            // create "chat message" 
+            const string attachmentId = "adaptive-card";
 
             var message = new ChatMessage
             {
@@ -747,29 +803,33 @@ public sealed partial class TeamsService
             };
             #endregion
 
-            #region add "hosted content" if image exists
-            if (imageBytes != null
-                && hostedContentTemporaryId != null)
+            #region add "hosted contents" to message
+            var hostedContents = new List<ChatMessageHostedContent>();
+
+            foreach (var data in imageData)
             {
-                message.HostedContents =
-                [
-                    new ChatMessageHostedContent
+                var hostedContentTemporaryId = data.Key;
+                var imageContentType = data.Value.Item1;
+                var imageBytes = data.Value.Item2;
+
+                hostedContents.Add(new ChatMessageHostedContent
+                {
+                    ContentBytes = imageBytes,
+                    ContentType = imageContentType,
+                    AdditionalData = new Dictionary<string, object>
                     {
-                        ContentBytes = imageBytes,
-                        ContentType = imageContentType,
-                        AdditionalData = new Dictionary<string, object>
-                        {
-                            ["@microsoft.graph.temporaryId"] = hostedContentTemporaryId
-                        }
+                        ["@microsoft.graph.temporaryId"] = hostedContentTemporaryId
                     }
-                ];
+                });
             }
+
+            message.HostedContents = hostedContents;
             #endregion
 
             #region send "adaptive card" messsage to channel
             var result = await graphClient
-                .Teams[teamId]
-                .Channels[channelId]
+                .Teams[req.TeamId]
+                .Channels[req.ChannelId]
                 .Messages
                 .PostAsync(
                     message,
@@ -779,8 +839,8 @@ public sealed partial class TeamsService
             {
                 logger.LogError(
                     "Microsoft Graph returned null while sending message. TeamId: {TeamId}, ChannelId: {ChannelId}",
-                    teamId,
-                    channelId);
+                    req.TeamId,
+                    req.ChannelId);
 
                 return ServiceResponse<ChatMessage>.Failure(
                     "Microsoft Graph returned an empty response.",
@@ -789,8 +849,8 @@ public sealed partial class TeamsService
 
             logger.LogInformation(
                 "Adaptive Card sent successfully. TeamId: {TeamId}, ChannelId: {ChannelId}, MessageId: {MessageId}",
-                teamId,
-                channelId,
+                req.TeamId,
+                req.ChannelId,
                 result.Id);
             #endregion
 
@@ -857,6 +917,12 @@ public sealed partial class TeamsService
             return ServiceResponse<ChatMessage>.Failure(
                 "Unexpected error occurred while sending Adaptive Card.",
                 HttpStatusCode.InternalServerError);
+        }
+        finally
+        {
+            // dispose "image streams"
+            foreach (var data in imageData)
+                await data.Value.Item3.DisposeAsync();
         }
     }
 }
