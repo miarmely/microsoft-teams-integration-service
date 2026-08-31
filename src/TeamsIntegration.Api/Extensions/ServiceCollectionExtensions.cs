@@ -14,6 +14,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMessageRepository, MessageRepository>();
         services.AddScoped<IMessageMediaRepository, MessageMediaRepository>();
         services.AddScoped<ITeamsRepository, TeamsRepository>();
+        services.AddScoped<ILogRepository, LogRepository>();
+        services.AddScoped<IAccessHubApiKeyRepository, AccessHubApiKeyRepository>();
 
         services.AddScoped<ITeamsSyncService, TeamsSyncService>();
         services.AddScoped<IObjectStorageService, MinioObjectStorageService>();
@@ -23,8 +25,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMessageExportService, MessageExportService>();
         services.AddScoped<IMessageDeletionService, MessageDeletionService>();
         services.AddScoped<ITeamsService, TeamsService>();
-        services.AddScoped<IAccessHubApiKeyRepository, AccessHubApiKeyRepository>();
         services.AddScoped<IApiKeyValidationService, ApiKeyValidationService>();
+        services.AddScoped<ILogService, LogService>();
 
         services.AddSingleton<IMessageMediaService, MessageMediaService>();
         services.AddSingleton(TimeProvider.System);

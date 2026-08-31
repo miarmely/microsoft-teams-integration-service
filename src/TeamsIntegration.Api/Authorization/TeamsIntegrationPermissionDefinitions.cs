@@ -26,6 +26,11 @@ public static class TeamsIntegrationPermissionDefinitions
         {
             Name = TeamsIntegrationPermissions.DeleteMessages,
             Description = "Synchronized Microsoft Teams messages and their stored media can be permanently deleted."
+        },
+        new ()
+        {
+            Name = TeamsIntegrationPermissions.ViewLogs,
+            Description = "Application logs stored by Teams Integration Service can be viewed."
         }
     ];
 }
