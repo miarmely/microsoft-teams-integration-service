@@ -179,17 +179,30 @@ public class TeamsController(
         [FromForm] SendAdaptiveCardRequest request,
         CancellationToken cancellationToken)
     {
-        await using var imageStream = request.Image.OpenReadStream();
+        Stream? imageStream = null;
 
-        var res = await teamsService.SendAdaptiveCardAsync(
-            request.TeamId,
-            request.ChannelId,
-            request.Title,
-            request.Description,
-            imageStream,
-            request.Image.ContentType,
-            cancellationToken);
+        try
+        {
+            if (request.Image != null)
+                imageStream = request.Image.OpenReadStream();
 
-        return StatusCode(res.StatusCode, res);
+            var res = await teamsService.SendAdaptiveCardAsync(
+                request.TeamId,
+                request.ChannelId,
+                request.Title,
+                request.Description,
+                imageStream,
+                request.Image?.ContentType,
+                cancellationToken);
+
+            return StatusCode(res.StatusCode, res);
+        }
+        finally
+        {
+            if (imageStream is not null)
+            {
+                await imageStream.DisposeAsync();
+            }
+        }
     }
 }
