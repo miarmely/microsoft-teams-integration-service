@@ -29,17 +29,18 @@ public sealed partial class MicrosoftGraphOAuthService
     private readonly ILogger<MicrosoftGraphOAuthService> _logger;
     private readonly string[] _delegatedScopes;
     private readonly object _cacheFileLock = new();
-    private string AccountIdPath => $"{_graphOpts.TokenCachePath}.account";
+    private string TokenCachePath => _graphOpts.TokenCachePath;
+    private string AccountIdPath => $"{TokenCachePath}.account";
 
     private void BeforeTokenCacheAccess(
         TokenCacheNotificationArgs args)
     {
         lock (_cacheFileLock)
         {
-            if (!File.Exists(_graphOpts.TokenCachePath))
+            if (!File.Exists(TokenCachePath))
                 return;
 
-            var protectedBytes = File.ReadAllBytes(_graphOpts.TokenCachePath);  // get encoded bytes
+            var protectedBytes = File.ReadAllBytes(TokenCachePath);  // get encoded bytes
             var cacheBytes = _tokenCacheProtector.Unprotect(protectedBytes);  // decode bytes
 
             args.TokenCache.DeserializeMsalV3(
@@ -58,7 +59,7 @@ public sealed partial class MicrosoftGraphOAuthService
         {
             #region create "cache directory" if not exists
             var directoryName = Path.GetDirectoryName(
-                Path.GetFullPath(_graphOpts.TokenCachePath));
+                Path.GetFullPath(TokenCachePath));
 
             if (!string.IsNullOrWhiteSpace(directoryName))
                 Directory.CreateDirectory(directoryName);
@@ -67,7 +68,7 @@ public sealed partial class MicrosoftGraphOAuthService
             #region create "token cache" file
             var cacheBytes = args.TokenCache.SerializeMsalV3();
             var protectedBytes = _tokenCacheProtector.Protect(cacheBytes);  // encode bytes
-            var temporaryPath = $"{_graphOpts.TokenCachePath}.{Guid.NewGuid():N}.tmp";
+            var temporaryPath = $"{TokenCachePath}.{Guid.NewGuid():N}.tmp";
 
             try
             {
@@ -77,7 +78,7 @@ public sealed partial class MicrosoftGraphOAuthService
 
                 File.Move(
                     temporaryPath,
-                    _graphOpts.TokenCachePath,
+                    TokenCachePath,
                     overwrite: true);
             }
             finally
@@ -92,7 +93,7 @@ public sealed partial class MicrosoftGraphOAuthService
     }
 
     /// <summary>
-    /// Read "account id" cache file. <br/>
+    ///  Read "account id" info from cache file. <br/>
     /// </summary>
     /// <returns></returns>
     private string? ReadAccountIdFromCacheFile()
@@ -110,7 +111,7 @@ public sealed partial class MicrosoftGraphOAuthService
     }
 
     /// <summary>
-    /// Create cache file for account id <br/>
+    /// Create cache file for save "account id" info <br/>
     /// </summary>
     /// <param name="accountId"></param>
     private void WriteAccountIdToCacheFile(
@@ -136,10 +137,7 @@ public sealed partial class MicrosoftGraphOAuthService
             #endregion
         }
     }
-}
 
-public sealed partial class MicrosoftGraphOAuthService : IMicrosoftGraphOAuthService
-{
     public MicrosoftGraphOAuthService(
         IConfidentialClientApplication clientApp,
         IOptions<MicrosoftGraphOptions> graphOpts,
@@ -155,7 +153,10 @@ public sealed partial class MicrosoftGraphOAuthService : IMicrosoftGraphOAuthSer
         _clientApplication.UserTokenCache.SetBeforeAccess(BeforeTokenCacheAccess);
         _clientApplication.UserTokenCache.SetAfterAccess(AfterTokenCacheAccess);
     }
+}
 
+public sealed partial class MicrosoftGraphOAuthService : IMicrosoftGraphOAuthService
+{
     public ServiceResponse<MicrosoftGraphAuthorizationUrlResponse> CreateAuthorizationUrl()
     {
         #region create "code verifier" and "verifier challenge"
@@ -194,7 +195,6 @@ public sealed partial class MicrosoftGraphOAuthService : IMicrosoftGraphOAuthSer
         };
 
         var query = MiarDict.ConvertDictToUrlQuery(parameters);
-
         #endregion
 
         #region set response model
@@ -301,12 +301,14 @@ public sealed partial class MicrosoftGraphOAuthService : IMicrosoftGraphOAuthSer
     public async Task<MicrosoftGraphOAuthStatusResponse> GetStatusAsync()
     {
         var accountId = ReadAccountIdFromCacheFile();
-        var account = string.IsNullOrWhiteSpace(accountId)
-            ? null
-            : await _clientApplication.GetAccountAsync(accountId);
+
+        var account = !string.IsNullOrWhiteSpace(accountId) ?
+            await _clientApplication.GetAccountAsync(accountId)
+            : null;
+
         return new MicrosoftGraphOAuthStatusResponse
         {
-            IsConnected = account is not null,
+            IsConnected = account != null,
             Username = account?.Username,
             AccountId = account?.HomeAccountId.Identifier
         };
@@ -316,21 +318,20 @@ public sealed partial class MicrosoftGraphOAuthService : IMicrosoftGraphOAuthSer
     {
         var accountId = ReadAccountIdFromCacheFile();
 
+        // remove "all tokens on cache" for Microsoft
         if (!string.IsNullOrWhiteSpace(accountId))
         {
             var account = await _clientApplication.GetAccountAsync(accountId);
 
-            if (account is not null)
+            if (account != null)
                 await _clientApplication.RemoveAsync(account);
         }
 
+        // remove "cache files" on local
         lock (_cacheFileLock)
         {
-            if (File.Exists(_graphOpts.TokenCachePath))
-                File.Delete(_graphOpts.TokenCachePath);
-
-            if (File.Exists(AccountIdPath))
-                File.Delete(AccountIdPath);
+            if (File.Exists(TokenCachePath)) File.Delete(TokenCachePath);
+            if (File.Exists(AccountIdPath)) File.Delete(AccountIdPath);
         }
 
         _logger.LogInformation("Microsoft Graph delegated authorization was disconnected.");

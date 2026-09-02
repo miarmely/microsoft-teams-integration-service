@@ -46,55 +46,6 @@ public sealed partial class TeamsService(
     private static string BuildAdaptiveCard(
         string title,
         string? description,
-        string? hostedContentTemporaryId)
-    {
-        // add message title
-        var body = new List<object>
-        {
-            new
-            {
-                type = "TextBlock",
-                text = title,
-                size = "Large",
-                weight = "Bolder",
-                wrap = true
-            }
-        };
-
-        // add message description
-        if (!string.IsNullOrWhiteSpace(description))
-            body.Add(new
-            {
-                type = "TextBlock",
-                text = description,
-                wrap = true,
-                spacing = "Small"
-            });
-
-        // add images 
-        if (!string.IsNullOrWhiteSpace(hostedContentTemporaryId))
-            body.Add(new
-            {
-                type = "Image",
-                url = $"../hostedContents/{hostedContentTemporaryId}/$value",
-                size = "Stretch",
-                altText = title
-            });
-
-        var adaptiveCard = new
-        {
-            type = "AdaptiveCard",
-            schema = "http://adaptivecards.io/schemas/adaptive-card.json",
-            version = "1.5",
-            body
-        };
-
-        return JsonSerializer.Serialize(adaptiveCard);
-    }
-
-    private static string BuildAdaptiveCard(
-        string title,
-        string? description,
         string[] hostedContentTemporaryIds)
     {
         // add message title
@@ -921,5 +872,55 @@ public sealed partial class TeamsService
             foreach (var data in imageData)
                 await data.Value.Item3.DisposeAsync();
         }
+    }
+
+    public async Task<ServiceResponse<ChatMessage>> SendMessageToUserAsync(
+        SendUserMessageRequest req,
+        CancellationToken cancellationToken = default)
+    {
+        #region validate parameters
+        if (string.IsNullOrWhiteSpace(req.UserEmail))
+        {
+            return ServiceResponse<ChatMessage>.Failure(
+                "UserEmail is required.",
+                StatusCodes.Status400BadRequest);
+        }
+
+        if (string.IsNullOrWhiteSpace(req.Message))
+        {
+            return ServiceResponse<ChatMessage>.Failure(
+                "Message is required.",
+                StatusCodes.Status400BadRequest);
+        }
+        #endregion
+
+        #region create "chat" with "target user"
+        var chatRes = await teamsRepo.CreateOneOnOneChatAsync(
+            req.UserEmail,
+            cancellationToken);
+
+        if (!chatRes.IsSuccess
+            || chatRes.Data == null)
+        {
+            return ServiceResponse<ChatMessage>.Failure(
+                chatRes.ErrorMessage ?? "Could not create Teams chat.",
+                chatRes.StatusCode);
+        }
+        #endregion
+
+        #region send "message" to "created/existing chat"
+        var chatId = chatRes.Data.Id!;
+        var sendMsgRes = await teamsRepo.SendChatMessageAsync(
+            chatId,
+            req.Message,
+            cancellationToken);
+
+        logger.LogInformation(
+            "Chat message sent. (ChatId: {ChatId}, TargetEmail: {TargetEmail})",
+            chatId,
+            req.UserEmail);
+        #endregion
+
+        return sendMsgRes;
     }
 }

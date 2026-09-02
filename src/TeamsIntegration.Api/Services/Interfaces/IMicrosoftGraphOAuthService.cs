@@ -19,7 +19,16 @@ public interface IMicrosoftGraphOAuthService
     Task<AccessToken> GetAccessTokenAsync(
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Get "current status" of Microsoft account. <br/>
+    /// Example, isConnected, Username, AccountId... infos.
+    /// </summary>
+    /// <returns></returns>
     Task<MicrosoftGraphOAuthStatusResponse> GetStatusAsync();
 
+    /// <summary>
+    /// Disconnect the Microsoft account.
+    /// </summary>
+    /// <returns></returns>
     Task DisconnectAsync();
 }

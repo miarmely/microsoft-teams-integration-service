@@ -67,4 +67,27 @@ public interface ITeamsRepository
         string hostedContentId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Create chat with target user. <br/>
+    /// (EXCEPTION-SAFE)
+    /// </summary>
+    /// <param name="userEmail"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<ServiceResponse<Chat>> CreateOneOnOneChatAsync(
+        string userEmail,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Send message to existing chat. <br />
+    /// (EXCEPTION-SAFE)
+    /// </summary>
+    /// <param name="chatId"></param>
+    /// <param name="message"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<ServiceResponse<ChatMessage>> SendChatMessageAsync(
+        string chatId,
+        string message,
+        CancellationToken cancellationToken = default);
 }

@@ -11,11 +11,13 @@ namespace TeamsIntegration.Api.Controllers;
 public sealed class AuthController(
     IAccessHubService accessHubService) : ControllerBase
 {
-    /// <summary>Authenticates a dashboard user through AccessHub.</summary>
+    /// <summary>
+    ///     Authenticates a dashboard user through AccessHub.
+    /// </summary>
     /// <remarks>
-    /// This is the only anonymous endpoint. The returned access token must be sent as a
-    /// Bearer token to protected endpoints. The refresh token is returned for future
-    /// refresh-flow support but this service currently exposes no refresh endpoint.
+    ///     This is the only anonymous endpoint. The returned access token must be sent as a
+    ///     Bearer token to protected endpoints. The refresh token is returned for future
+    ///     refresh-flow support but this service currently exposes no refresh endpoint.
     /// </remarks>
     /// <param name="req">The user's AccessHub username and password.</param>
     /// <param name="cancellationToken">Cancels the request if the client disconnects.</param>

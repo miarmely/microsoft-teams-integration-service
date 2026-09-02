@@ -159,4 +159,18 @@ public class TeamsController(
 
         return StatusCode(res.StatusCode, res);
     }
+
+    [HttpPost("users/message")]
+    [HasPermission(TeamsIntegrationPermissions.ChatMessageSend)]
+    [ProducesResponseType(typeof(ServiceResponse<ChatMessage>), StatusCodes.Status201Created)]
+    public async Task<IActionResult> SendMessageToUserAsync(
+        [FromBody] SendUserMessageRequest req,
+        CancellationToken cancellationToken)
+    {
+        var res = await teamsService.SendMessageToUserAsync(
+            req,
+            cancellationToken);
+
+        return StatusCode(res.StatusCode, res);
+    }
 }

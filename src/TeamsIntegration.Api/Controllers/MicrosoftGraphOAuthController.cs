@@ -112,6 +112,7 @@ public sealed partial class MicrosoftGraphOAuthController
     public async Task<ActionResult<ServiceResponse>> Disconnect()
     {
         await oauthService.DisconnectAsync();
+
         return Ok(ServiceResponse.Success(StatusCodes.Status200OK));
     }
 }

@@ -10,8 +10,9 @@ public class MicrosoftGraphOptions
     public string PostLoginRedirectUri { get; init; } = "http://localhost:3000";
     public string TokenCachePath { get; init; } = "data/microsoft-graph-token-cache.bin";
     /// <summary>
-    /// Required delegated permissions.
-    /// Required permissions which must be granted by Microsoft Entra Center.
+    /// Required delegated permissions. <br/>
+    /// Required permissions which must be granted by Microsoft Entra Center. <br/>
+    /// Those scopes will use for Microsoft when creating "Authorization Url". 
     /// </summary>
     public IReadOnlyCollection<string> DelegatedScopes { get; init; } =
     [
@@ -19,6 +20,9 @@ public class MicrosoftGraphOptions
         "Team.ReadBasic.All",
         "Channel.ReadBasic.All",
         "ChannelMessage.Read.All",
-        "ChannelMessage.Send"
+        "ChannelMessage.Send",
+        "Chat.Create",
+        "Chat.ReadWrite",
+        "ChatMessage.Send"
     ];
 }

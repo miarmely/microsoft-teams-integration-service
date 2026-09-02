@@ -539,198 +539,159 @@ public partial class TeamsRepository(
         }
     }
 
-#if false // Removed: legacy workflow-webhook delivery path.
-    public async Task<ServiceResponse> SendMessageAsync(
-        string webhookUrl,
-        TeamsWorkflowMessageRequest payload,
+    public async Task<ServiceResponse<Chat>> CreateOneOnOneChatAsync(
+        string userEmail,
         CancellationToken cancellationToken = default)
     {
-        // validate parameters
-        if (!Uri.TryCreate(
-            webhookUrl,
-            UriKind.Absolute,
-            out var webhookUri))
-        {
-            logger.LogWarning("Invalid Teams Workflow URL.");
-
-            return new()
-            {
-                IsSuccess = false,
-                StatusCode = StatusCodes.Status400BadRequest,
-                ErrorMessage = "Configured Teams Workflow URL is invalid."
-            };
-        }
-
-        // send message
-        try
-        {
-            // send request
-            using var response = await httpClient.PostAsJsonAsync(
-                webhookUri,
-                payload,
-                cancellationToken);
-
-            if (response.IsSuccessStatusCode)
-                return new()
-                {
-                    IsSuccess = true,
-                    StatusCode = (int)response.StatusCode
-                };
-
-            // when any error occured
-            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            logger.LogWarning(
-                "Teams Workflow rejected message request. " +
-                "(StatusCode: {StatusCode}, Response: {Response})",
-                (int)response.StatusCode,
-                responseContent);
-
-            return new()
-            {
-                IsSuccess = false,
-                StatusCode = (int)response.StatusCode,
-                ErrorMessage = "Teams Workflow rejected the message request."
-            };
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            logger.LogInformation("Sending Teams message was cancelled.");
-
-            throw;
-        }
-        catch (TaskCanceledException ex)
-        {
-            logger.LogWarning(
-                ex,
-                "Teams Workflow request timed out.");
-
-            return new()
-            {
-                IsSuccess = false,
-                StatusCode = StatusCodes.Status504GatewayTimeout,
-                ErrorMessage = "Teams Workflow request timed out."
-            };
-        }
-        catch (HttpRequestException ex)
-        {
-            logger.LogError(
-                ex,
-                "Network error occurred while sending message to Teams.");
-
-            return new()
-            {
-                IsSuccess = false,
-                StatusCode = StatusCodes.Status503ServiceUnavailable,
-                ErrorMessage = "Teams Workflow is currently unavailable."
-            };
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Unexpected error occurred while sending message to Teams.");
-
-            return new()
-            {
-                IsSuccess = false,
-                StatusCode = StatusCodes.Status500InternalServerError,
-                ErrorMessage = "Unexpected error occurred while sending message."
-            };
-        }
-    }
-
-    public async Task<ServiceResponse> SendMessageV2Async(
-        string webhookUrl,
-        TeamsWorkflowMessageV2Request payload,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(webhookUrl);
-        ArgumentNullException.ThrowIfNull(payload);
+        ArgumentException.ThrowIfNullOrWhiteSpace(userEmail);
 
         try
         {
-            #region send message to Teams channel
-            using var teamsRes = await httpClient.PostAsJsonAsync(
-                webhookUrl,
-                payload,
-                JsonOptions,
-                cancellationToken);
+            #region get "current account"
+            var currentUser = await graphClient
+                .Me
+                .GetAsync(cancellationToken: cancellationToken);
 
-            if (!teamsRes.IsSuccessStatusCode)
-            {
-                var responseBody = await teamsRes.Content.ReadAsStringAsync(
-                    cancellationToken);
-
-                logger.LogWarning(
-                    "Message with images sending request to Teams Channel failed. " +
-                    "(StatusCode: {StatusCode}, Response: {Response})",
-                    (int)teamsRes.StatusCode,
-                    responseBody);
-
-                return new ServiceResponse
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)teamsRes.StatusCode,
-                    ErrorMessage = string.IsNullOrWhiteSpace(responseBody) ?
-                        "Teams workflow rejected the message sending request."
-                        : responseBody
-                };
-            }
+            if (string.IsNullOrWhiteSpace(currentUser?.Id))
+                return ServiceResponse<Chat>.Failure(
+                    "Authenticated Microsoft Graph user could not be resolved.",
+                    StatusCodes.Status401Unauthorized);
             #endregion
 
-            return new ServiceResponse
+            #region create "chat" with "target user"
+            var chat = new Chat
             {
-                IsSuccess = true,
-                StatusCode = (int)teamsRes.StatusCode
+                ChatType = ChatType.OneOnOne,
+
+                Members =
+                [
+                    new AadUserConversationMember
+                    {
+                        Roles = ["owner"],
+
+                        AdditionalData = new Dictionary<string, object>
+                        {
+                            ["user@odata.bind"] = $"https://graph.microsoft.com/v1.0/users('{currentUser.Id}')"
+                        }
+                    },
+
+                    new AadUserConversationMember
+                    {
+                        Roles = ["owner"],
+
+                        AdditionalData = new Dictionary<string, object>
+                        {
+                            ["user@odata.bind"] = $"https://graph.microsoft.com/v1.0/users('{userEmail}')"
+                        }
+                    }
+                ]
             };
 
+            var result = await graphClient
+                .Chats
+                .PostAsync(
+                    chat,
+                    cancellationToken: cancellationToken);
+
+            if (result == null
+                || string.IsNullOrWhiteSpace(result.Id))
+                return ServiceResponse<Chat>.Failure(
+                    "Microsoft Graph didn't return the created chat.",
+                    StatusCodes.Status502BadGateway);
+            #endregion
+
+            return ServiceResponse<Chat>.Success(
+                result,
+                StatusCodes.Status200OK);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             throw;
         }
-        catch (HttpRequestException ex)
-        {
-            logger.LogError(
-                ex,
-                "HTTP error while calling Teams message sending workflow.");
-
-            return new ServiceResponse
-            {
-                IsSuccess = false,
-                StatusCode = ex.StatusCode.HasValue ?
-                    (int)ex.StatusCode.Value
-                    : StatusCodes.Status503ServiceUnavailable,
-                ErrorMessage = "Teams workflow is unavailable."
-            };
-        }
-        catch (TaskCanceledException ex)
+        catch (ODataError err)
         {
             logger.LogWarning(
-                ex,
-                "Teams message sending workflow request timed out.");
+                err,
+                "Microsoft Graph rejected one-to-one chat creation. User: {UserEmail}",
+                userEmail);
 
-            return new ServiceResponse
-            {
-                IsSuccess = false,
-                StatusCode = StatusCodes.Status504GatewayTimeout,
-                ErrorMessage = "Teams message sending workflow request timed out."
-            };
+            return ServiceResponse<Chat>.Failure(
+                err.Error?.Message ?? "Microsoft Graph rejected chat creation.",
+                GraphStatusCodeMapper.Map(err.ResponseStatusCode));
         }
-        catch (Exception ex)
+        catch (Exception err)
         {
             logger.LogError(
-                ex,
-                "Unexpected Teams message sending workflow error.");
+                err,
+                "Unexpected error while creating one-to-one Teams chat. User: {UserEmail}",
+                userEmail);
 
-            return new ServiceResponse
-            {
-                IsSuccess = false,
-                StatusCode = StatusCodes.Status500InternalServerError,
-                ErrorMessage = "Unexpected error while communicating with Teams message sending workflow."
-            };
+            return ServiceResponse<Chat>.Failure(
+                "Unexpected error while creating Teams chat.",
+                StatusCodes.Status500InternalServerError);
         }
     }
-#endif
+
+    public async Task<ServiceResponse<ChatMessage>> SendChatMessageAsync(
+        string chatId,
+        string message,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(chatId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(message);
+
+        try
+        {
+            var chatMessage = new ChatMessage
+            {
+                Body = new ItemBody
+                {
+                    ContentType = BodyType.Text,
+                    Content = message
+                }
+            };
+
+            var result = await graphClient
+                .Chats[chatId]
+                .Messages
+                .PostAsync(
+                    chatMessage,
+                    cancellationToken: cancellationToken);
+
+            if (result == null)
+                return ServiceResponse<ChatMessage>.Failure(
+                    "Microsoft Graph didn't return the sent message.",
+                    StatusCodes.Status502BadGateway);
+
+            return ServiceResponse<ChatMessage>.Success(
+                result,
+                StatusCodes.Status201Created);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (ODataError err)
+        {
+            logger.LogWarning(
+                err,
+                "Microsoft Graph rejected chat message. ChatId: {ChatId}",
+                chatId);
+
+            return ServiceResponse<ChatMessage>.Failure(
+                err.Error?.Message ?? "Microsoft Graph rejected the chat message.",
+                GraphStatusCodeMapper.Map(err.ResponseStatusCode));
+        }
+        catch (Exception err)
+        {
+            logger.LogError(
+                err,
+                "Unexpected error while sending Teams chat message. ChatId: {ChatId}",
+                chatId);
+
+            return ServiceResponse<ChatMessage>.Failure(
+                "Unexpected error while sending Teams chat message.",
+                StatusCodes.Status500InternalServerError);
+        }
+    }
 }

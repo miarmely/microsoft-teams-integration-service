@@ -31,6 +31,21 @@ public static class TeamsIntegrationPermissionDefinitions
         {
             Name = TeamsIntegrationPermissions.ViewLogs,
             Description = "Application logs stored by Teams Integration Service can be viewed."
-        }
+        },
+        new()
+        {
+            Name = TeamsIntegrationPermissions.ChatCreate,
+            Description = "Allows creating one-to-one or group Microsoft Teams chats."
+        },
+        new()
+        {
+            Name = TeamsIntegrationPermissions.ChatReadWrite,
+            Description = "Allows reading and managing Microsoft Teams chats."
+        },
+        new ()
+        {
+            Name = TeamsIntegrationPermissions.ChatMessageSend,
+            Description = "Allows sending messages to users through Microsoft Teams chats."
+        },
     ];
 }

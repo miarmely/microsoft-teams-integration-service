@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-
 namespace TeamsIntegration.Api.Authorization.Models;
 
 /// <summary>
@@ -13,12 +11,18 @@ public static class TeamsIntegrationPermissions
     public const string SendMessage = "teams.messages.send";
     public const string DeleteMessages = "teams.messages.delete";
     public const string ViewLogs = "teams.logs.view";
+    public const string ChatCreate = "teams.chat.create";
+    public const string ChatReadWrite = "teams.chat.readwrite";
+    public const string ChatMessageSend = "teams.chatmessage.send";
 
     public static readonly IReadOnlyCollection<string> All = [
         ViewMessages,
         SynchronizeChannel,
         SendMessage,
         DeleteMessages,
-        ViewLogs
+        ViewLogs,
+        ChatCreate,
+        ChatReadWrite,
+        ChatMessageSend
     ];
 }

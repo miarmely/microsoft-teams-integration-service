@@ -43,4 +43,8 @@ public interface ITeamsService
     Task<ServiceResponse<ChatMessage>> SendAdaptiveCardAsync(
         SendAdaptiveCardRequest req,
         CancellationToken cancellationToken = default);
+
+    Task<ServiceResponse<ChatMessage>> SendMessageToUserAsync(
+        SendUserMessageRequest req,
+        CancellationToken cancellationToken = default);
 }
