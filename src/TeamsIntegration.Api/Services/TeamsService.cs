@@ -5,6 +5,7 @@ using System.Text.Json;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Query.ExpressionTranslators.Internal;
 using TeamsIntegration.Api.Models.Dtos;
 using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Models.Responses;
@@ -880,18 +881,14 @@ public sealed partial class TeamsService
     {
         #region validate parameters
         if (string.IsNullOrWhiteSpace(req.UserEmail))
-        {
             return ServiceResponse<ChatMessage>.Failure(
                 "UserEmail is required.",
                 StatusCodes.Status400BadRequest);
-        }
 
         if (string.IsNullOrWhiteSpace(req.Message))
-        {
             return ServiceResponse<ChatMessage>.Failure(
                 "Message is required.",
                 StatusCodes.Status400BadRequest);
-        }
         #endregion
 
         #region create "chat" with "target user"
@@ -922,5 +919,92 @@ public sealed partial class TeamsService
         #endregion
 
         return sendMsgRes;
+    }
+
+    public async Task<ServiceResponse<SendMultipleUserMessageResponse>> SendMessageToUsersAsync(
+        SendMultipleUserMessageRequest req,
+        CancellationToken cancellationToken = default)
+    {
+        #region validate parameters
+        if (req.UserEmails.Any(email => string.IsNullOrWhiteSpace(email)))
+            return ServiceResponse<SendMultipleUserMessageResponse>.Failure(
+                "Some UserEmails are empty.",
+                StatusCodes.Status400BadRequest);
+
+        if (string.IsNullOrWhiteSpace(req.Message))
+            return ServiceResponse<SendMultipleUserMessageResponse>.Failure(
+                "Message is required.",
+                StatusCodes.Status400BadRequest);
+        #endregion
+
+        #region create "chats" with "target users" (EXCEPTION-SAFE)  
+        var chatData = new Dictionary<string, string>();  // {chatId : UserEmail}
+
+        foreach (var email in req.UserEmails)
+        {
+            var chatRes = await teamsRepo.CreateOneOnOneChatAsync(
+                email,
+                cancellationToken);
+
+            if (!chatRes.IsSuccess
+                || chatRes.Data == null)
+            {
+                return ServiceResponse<SendMultipleUserMessageResponse>.Failure(
+                    chatRes.ErrorMessage ?? $"Could not create Teams chat for {email} user.",
+                    chatRes.StatusCode);
+            }
+
+            var chatId = chatRes.Data.Id!;
+            chatData.Add(chatId, email);
+        }
+        #endregion
+
+        #region send "message" to "created/existing chat" (EXCEPTION-SAFE)
+        var result = new SendMultipleUserMessageResponse()
+        {
+            TargetCount = req.UserEmails.Count
+        };
+
+        foreach (var data in chatData)
+        {
+            #region send message
+            var chatId = data.Key;
+            var userEmail = data.Value;
+
+            var sendMsgRes = await teamsRepo.SendChatMessageAsync(
+                chatId,
+                req.Message,
+                cancellationToken);
+
+            if (!sendMsgRes.IsSuccess
+                || sendMsgRes.Data == null)
+            {
+                result.FailedEmails.Add(userEmail);
+
+                logger.LogWarning(
+                    "Message coudn't send to user. (ChatId: {chatId}, UserEmail: {UserEmail})",
+                    chatId,
+                    userEmail);
+
+                continue;
+            }
+
+            #endregion
+
+            #region store message
+            result.DeliveredMessages.Add(sendMsgRes.Data);
+
+            logger.LogInformation(
+                "Chat message sent. (ChatId: {ChatId}, TargetEmail: {TargetEmail})",
+                chatId,
+                userEmail);
+
+            #endregion
+        }
+        #endregion
+
+        return ServiceResponse<SendMultipleUserMessageResponse>.Success(
+            result,
+            HttpStatusCode.OK);
     }
 }

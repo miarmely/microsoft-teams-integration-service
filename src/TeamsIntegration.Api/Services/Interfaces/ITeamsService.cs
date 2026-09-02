@@ -44,7 +44,25 @@ public interface ITeamsService
         SendAdaptiveCardRequest req,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Send text message to one user. <br/>
+    /// (EXCEPTION-SAFE)
+    /// </summary>
+    /// <param name="req"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     Task<ServiceResponse<ChatMessage>> SendMessageToUserAsync(
         SendUserMessageRequest req,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Send text message to multiple users. <br/>
+    /// (EXCEPTION-SAFE)
+    /// </summary>
+    /// <param name="req"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<ServiceResponse<SendMultipleUserMessageResponse>> SendMessageToUsersAsync(
+        SendMultipleUserMessageRequest req,
         CancellationToken cancellationToken = default);
 }

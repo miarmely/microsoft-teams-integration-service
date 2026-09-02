@@ -173,4 +173,18 @@ public class TeamsController(
 
         return StatusCode(res.StatusCode, res);
     }
+
+    [HttpPost("users/message/multiple")]
+    [HasPermission(TeamsIntegrationPermissions.ChatMessageSend)]
+    [ProducesResponseType(typeof(ServiceResponse<ChatMessage>), StatusCodes.Status201Created)]
+    public async Task<IActionResult> SendMessageToUsersAsync(
+        [FromBody] SendMultipleUserMessageRequest req,
+        CancellationToken cancellationToken)
+    {
+        var res = await teamsService.SendMessageToUsersAsync(
+            req,
+            cancellationToken);
+
+        return StatusCode(res.StatusCode, res);
+    }
 }
