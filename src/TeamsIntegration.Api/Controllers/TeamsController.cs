@@ -146,7 +146,7 @@ public class TeamsController(
     }
 
 
-    [HttpPost("adaptive-card")]
+    [HttpPost("channels/message")]
     [Consumes("multipart/form-data")]
     [HasPermission(TeamsIntegrationPermissions.SendMessage)]
     public async Task<IActionResult> SendAdaptiveCardAsync(
@@ -173,6 +173,7 @@ public class TeamsController(
 
         return StatusCode(res.StatusCode, res);
     }
+
 
     [HttpPost("users/message/multiple")]
     [HasPermission(TeamsIntegrationPermissions.ChatMessageSend)]

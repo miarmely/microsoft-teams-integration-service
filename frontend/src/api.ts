@@ -281,6 +281,6 @@ export const api = {
     form.set("title", title);
     form.set("description", description);
     images.forEach((image) => form.append("images", image));
-    return requestForm<GraphMessage>("/api/Teams/adaptive-card", form, token);
+    return requestForm<GraphMessage>("/api/Teams/channels/message", form, token);
   },
 };
