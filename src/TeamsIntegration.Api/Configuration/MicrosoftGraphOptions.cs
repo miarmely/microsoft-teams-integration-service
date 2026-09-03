@@ -17,6 +17,7 @@ public class MicrosoftGraphOptions
     public IReadOnlyCollection<string> DelegatedScopes { get; init; } =
     [
         "User.Read",
+        "User.ReadBasic.All",
         "Team.ReadBasic.All",
         "Channel.ReadBasic.All",
         "ChannelMessage.Read.All",

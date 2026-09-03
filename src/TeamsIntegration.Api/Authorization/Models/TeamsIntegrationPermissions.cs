@@ -14,6 +14,7 @@ public static class TeamsIntegrationPermissions
     public const string ChatCreate = "teams.chat.create";
     public const string ChatReadWrite = "teams.chat.readwrite";
     public const string ChatMessageSend = "teams.chatmessage.send";
+    public const string ViewUsers = "teams.users.view";
 
     public static readonly IReadOnlyCollection<string> All = [
         ViewMessages,
@@ -23,6 +24,7 @@ public static class TeamsIntegrationPermissions
         ViewLogs,
         ChatCreate,
         ChatReadWrite,
-        ChatMessageSend
+        ChatMessageSend,
+        ViewUsers
     ];
 }

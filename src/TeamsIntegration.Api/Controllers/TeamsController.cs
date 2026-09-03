@@ -176,7 +176,7 @@ public class TeamsController(
 
 
     [HttpPost("users/message/multiple")]
-    [HasPermission(TeamsIntegrationPermissions.ChatMessageSend)]
+    [HasPermission(TeamsIntegrationPermissions.ViewUsers)]
     [ProducesResponseType(typeof(ServiceResponse<ChatMessage>), StatusCodes.Status201Created)]
     public async Task<IActionResult> SendMessageToUsersAsync(
         [FromBody] SendMultipleUserMessageRequest req,
@@ -185,6 +185,23 @@ public class TeamsController(
         var res = await teamsService.SendMessageToUsersAsync(
             req,
             cancellationToken);
+
+        return StatusCode(res.StatusCode, res);
+    }
+
+
+    /// <summary>
+    /// Gets all users available in the Microsoft Entra tenant.
+    /// </summary>
+    [HttpGet("users")]
+    [HasPermission(TeamsIntegrationPermissions.ViewMessages)]
+    [ProducesResponseType(typeof(ServiceResponse<IReadOnlyCollection<UserResponse>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ServiceResponse), StatusCodes.Status503ServiceUnavailable)]
+    [ProducesResponseType(typeof(ServiceResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetUsersAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var res = await teamsService.GetUsersAsync(cancellationToken);
 
         return StatusCode(res.StatusCode, res);
     }

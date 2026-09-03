@@ -65,4 +65,13 @@ public interface ITeamsService
     Task<ServiceResponse<SendMultipleUserMessageResponse>> SendMessageToUsersAsync(
         SendMultipleUserMessageRequest req,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get all Teams users. <br/>
+    /// (EXCEPTION-SAFE)
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<ServiceResponse<UserResponse>> GetUsersAsync(
+        CancellationToken cancellationToken = default);
 }

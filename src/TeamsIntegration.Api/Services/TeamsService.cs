@@ -5,7 +5,6 @@ using System.Text.Json;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Query.ExpressionTranslators.Internal;
 using TeamsIntegration.Api.Models.Dtos;
 using TeamsIntegration.Api.Models.Requests;
 using TeamsIntegration.Api.Models.Responses;
@@ -113,318 +112,6 @@ public sealed partial class TeamsService
 
         return messageMedia;
     }
-
-#if false // Removed: legacy workflow-webhook delivery path.
-    public async Task<ServiceResponse<MessageSendResponse>> SendMessagesToChannelAsync(
-        TeamsSendMultipleMessageRequest req,
-        CancellationToken cancellationToken = default)
-    {
-        #region validate parameters
-        if (string.IsNullOrWhiteSpace(req.TeamId))
-            return new()
-            {
-                IsSuccess = false,
-                StatusCode = StatusCodes.Status400BadRequest,
-                ErrorMessage = "TeamId is required."
-            };
-
-        if (string.IsNullOrWhiteSpace(req.ChannelId))
-            return new()
-            {
-                IsSuccess = false,
-                StatusCode = StatusCodes.Status400BadRequest,
-                ErrorMessage = "ChannelId is required."
-            };
-
-        if (req.Messages.Count == 0)
-            return new()
-            {
-                IsSuccess = false,
-                StatusCode = StatusCodes.Status400BadRequest,
-                ErrorMessage = "At least one message must be provided."
-            };
-        #endregion
-
-        #region resolve the workflow URL from the selected team/channel assignment.
-        var webhookUrlRes = await webhookUrlService.GetByChannelAsync(
-            req.TeamId,
-            req.ChannelId,
-            cancellationToken);
-
-
-        if (!webhookUrlRes.IsSuccess
-            || webhookUrlRes.Data == null)
-            return new()
-            {
-                IsSuccess = false,
-                StatusCode = webhookUrlRes.StatusCode,
-                ErrorMessage = webhookUrlRes.ErrorMessage
-            };
-
-        var webhookUrl = webhookUrlRes.Data.Url;
-        #endregion
-
-        #region send messages
-        var successCount = 0;
-        var failedCount = 0;
-
-        foreach (var msg in req.Messages)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            #region set payload
-            TeamsWorkflowMessageRequest payload;
-
-            try
-            {
-                payload = TeamsWorkflowPayloadFactory.Create(msg);
-            }
-            catch (ArgumentException ex)  // if "msg" not contain any "title" or "content" (empty body)
-            {
-                logger.LogWarning(
-                    ex,
-                    "Invalid Teams message payload. " +
-                    "(Team: {TeamId}, Channel: {ChannelId})",
-                    req.TeamId,
-                    req.ChannelId);
-
-                failedCount++;
-                continue;
-            }
-            #endregion
-
-            #region send message
-            var sendMsgRes = await teamsRepo.SendMessageAsync(
-                webhookUrl,
-                payload,
-                cancellationToken);
-
-            if (sendMsgRes.IsSuccess)
-                successCount++;
-
-            else
-            {
-                failedCount++;
-
-                logger.LogWarning(
-                    "Teams message could not be delivered. " +
-                    "(Team: {TeamId}, Channel: {ChannelId}, " +
-                    "StatusCode: {StatusCode})",
-                    req.TeamId,
-                    req.ChannelId,
-                    sendMsgRes.StatusCode);
-            }
-            #endregion
-        }
-        #endregion
-
-        #region set "response" model
-        var isAllFailed = successCount == 0;
-
-        var res = new ServiceResponse<MessageSendResponse>
-        {
-            IsSuccess = !isAllFailed,
-            StatusCode = isAllFailed ? StatusCodes.Status502BadGateway : StatusCodes.Status200OK,
-            ErrorMessage = isAllFailed ? "All Teams messages failed to send." : null,
-            Data = isAllFailed ?
-                null
-                : new()
-                {
-                    MessagesSendedSuccessfull = successCount,
-                    MessagesFailedWhenSending = failedCount
-                }
-        };
-        #endregion
-
-        return res;
-    }
-
-    public async Task<ServiceResponse<MessageSendResponse>> SendMessageWithImagesAsync(
-        TeamsSendMessageWithImagesRequest req,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(req);
-
-        try
-        {
-            #region validate parameters (EXCEPTION-SAFE)
-            if (string.IsNullOrWhiteSpace(req.TeamId))
-                return new ServiceResponse<MessageSendResponse>
-                {
-                    IsSuccess = false,
-                    StatusCode = StatusCodes.Status400BadRequest,
-                    ErrorMessage = "TeamId is required."
-                };
-
-            if (string.IsNullOrWhiteSpace(req.ChannelId))
-                return new ServiceResponse<MessageSendResponse>
-                {
-                    IsSuccess = false,
-                    StatusCode = StatusCodes.Status400BadRequest,
-                    ErrorMessage = "ChannelId is required."
-                };
-
-            var hasTitle = !string.IsNullOrWhiteSpace(req.Title);
-            var hasContent = req.Content.Any(x => !string.IsNullOrWhiteSpace(x));
-            var hasImages = req.Images.Count > 0;
-
-            if (!hasTitle
-                && !hasContent
-                && !hasImages)
-                return new ServiceResponse<MessageSendResponse>
-                {
-                    IsSuccess = false,
-                    StatusCode = StatusCodes.Status400BadRequest,
-                    ErrorMessage = "At least one title, content or image is required."
-                };
-            #endregion
-
-            #region resolve "workflow webhook" (EXCEPTION-SAFE)
-            var webhookRes = await webhookUrlService.GetByChannelAsync(
-                req.TeamId,
-                req.ChannelId,
-                cancellationToken);
-
-            if (!webhookRes.IsSuccess
-                || webhookRes.Data == null
-                || string.IsNullOrWhiteSpace(webhookRes.Data.Url))
-                return new ServiceResponse<MessageSendResponse>
-                {
-                    IsSuccess = false,
-                    StatusCode = StatusCodes.Status404NotFound,
-                    ErrorMessage = "No Teams workflow webhook is configured " +
-                        "for the specified team and channel."
-                };
-            #endregion
-
-            #region prepare "images" (EXCEPTION-SAFE)
-            var preparedImages = Array.Empty<OutgoingMessageImage>();
-
-            if (hasImages)
-            {
-                var outgoingMsgImgService = serviceProvider
-                    .GetRequiredService<IOutgoingMessageImageService>();
-
-                var imageRes = await outgoingMsgImgService.PrepareAsync(
-                    req.Images,
-                    cancellationToken);
-
-                if (!imageRes.IsSuccess)
-                    return new ServiceResponse<MessageSendResponse>
-                    {
-                        IsSuccess = false,
-                        StatusCode = imageRes.StatusCode,
-                        ErrorMessage = imageRes.ErrorMessage
-                    };
-
-                preparedImages = imageRes.Data?.ToArray() ?? [];
-            }
-            #endregion
-
-            #region set message (adaptive-card) (EXCEPTION-SAFE)
-            var cardBody = new List<object>();
-
-            // set message title
-            if (!string.IsNullOrWhiteSpace(req.Title))
-                cardBody.Add(new AdaptiveCardTextBlock
-                {
-                    Text = req.Title.Trim(),
-                    Weight = "Bolder",
-                    Size = "Medium"
-                });
-
-            // set message body
-            foreach (var content in req.Content)
-            {
-                if (string.IsNullOrWhiteSpace(content)) continue;
-
-                cardBody.Add(new AdaptiveCardTextBlock
-                {
-                    Text = content.Trim()
-                });
-            }
-
-            foreach (var image in preparedImages)
-                cardBody.Add(new AdaptiveCardImage
-                {
-                    Url = image.Url,
-                    AltText = image.FileName
-                });
-
-            var workflowRequest = new TeamsWorkflowMessageV2Request
-            {
-                Card = new AdaptiveCardV2
-                {
-                    Body = cardBody
-                }
-            };
-            #endregion
-
-            #region send message (EXCEPTION-SAFE)
-            var sendRes = await teamsRepo.SendMessageV2Async(
-                webhookRes.Data.Url,
-                workflowRequest,
-                cancellationToken);
-
-            if (!sendRes.IsSuccess)
-            {
-                logger.LogWarning(
-                    "Teams v2 message delivery failed. " +
-                    "(TeamId: {TeamId}, ChannelId: {ChannelId}, Error: {Error})",
-                    req.TeamId,
-                    req.ChannelId,
-                    sendRes.ErrorMessage);
-
-                return new ServiceResponse<MessageSendResponse>
-                {
-                    IsSuccess = false,
-                    StatusCode = sendRes.StatusCode,
-                    ErrorMessage = sendRes.ErrorMessage
-                };
-            }
-
-            logger.LogInformation(
-                "Teams v2 message successfully submitted. " +
-                "(TeamId: {TeamId}, ChannelId: {ChannelId}, ImageCount: {ImageCount})",
-                req.TeamId,
-                req.ChannelId,
-                preparedImages.Length);
-            #endregion
-
-            return new ServiceResponse<MessageSendResponse>
-            {
-                IsSuccess = true,
-                StatusCode = StatusCodes.Status200OK,
-                Data = new MessageSendResponse
-                {
-                    MessagesSendedSuccessfull = 1,
-                    MessagesFailedWhenSending = 0
-                }
-            };
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Unexpected error while sending Teams v2 message. " +
-                "(TeamId: {TeamId}, ChannelId: {ChannelId})",
-                req.TeamId,
-                req.ChannelId);
-
-            return new ServiceResponse<MessageSendResponse>
-            {
-                IsSuccess = false,
-                StatusCode = StatusCodes.Status500InternalServerError,
-                ErrorMessage = "An unexpected error occurred while sending the Teams message."
-            };
-        }
-    }
-
-#endif
 
     public async Task<ServiceResponse<IReadOnlyCollection<TeamResponse>>> GetTeamsAsync(
         CancellationToken cancellationToken = default)
@@ -1005,6 +692,44 @@ public sealed partial class TeamsService
 
         return ServiceResponse<SendMultipleUserMessageResponse>.Success(
             result,
+            HttpStatusCode.OK);
+    }
+
+    public async Task<ServiceResponse<UserResponse>> GetUsersAsync(
+        CancellationToken cancellationToken = default)
+    {
+        #region fetch users
+        var res = await teamsRepo.GetUsersAsync(cancellationToken);
+
+        if (!res.IsSuccess)
+            return ServiceResponse<UserResponse>.Failure(
+                res.ErrorMessage ?? "Could not fetch Microsoft Teams users.",
+                res.StatusCode);
+        #endregion
+
+        #region set response model
+        var users = (res.Data ?? [])
+            .Where(user => !string.IsNullOrWhiteSpace(user.Id))
+            .Select(user => new UserDto
+            {
+                Id = user.Id!,
+                DisplayName = user.DisplayName,
+                GivenName = user.GivenName,
+                Surname = user.Surname,
+                Mail = user.Mail,
+                UserPrincipalName = user.UserPrincipalName
+            })
+            .OrderBy(user => user.DisplayName)
+            .ToList();
+
+        var userRes = new UserResponse
+        {
+            Users = users
+        };
+        #endregion
+
+        return ServiceResponse<UserResponse>.Success(
+            userRes,
             HttpStatusCode.OK);
     }
 }

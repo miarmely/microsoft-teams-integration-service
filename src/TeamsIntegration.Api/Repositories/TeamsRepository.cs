@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
@@ -536,6 +537,110 @@ public partial class TeamsRepository(
                 StatusCode = 500,
                 ErrorMessage = "Unexpected server error."
             };
+        }
+    }
+
+    public async Task<ServiceResponse<IReadOnlyCollection<User>>> GetUsersAsync(
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var users = new List<User>();
+
+            var res = await graphClient
+                .Users
+                .GetAsync(
+                    reqCnfg =>
+                    {
+                        reqCnfg.QueryParameters.Select =
+                        [
+                            "id",
+                            "displayName",
+                            "givenName",
+                            "surname",
+                            "mail",
+                            "userPrincipalName"
+                        ];
+
+                        reqCnfg.QueryParameters.Top = 999;
+                    },
+                    cancellationToken);
+
+            // fetch next page if exists
+            while (res != null)
+            {
+                users.AddRange(res.Value ?? []);
+
+                if (string.IsNullOrWhiteSpace(res.OdataNextLink)) break;
+
+                res = await graphClient
+                    .Users
+                    .WithUrl(res.OdataNextLink)
+                    .GetAsync(cancellationToken: cancellationToken);
+            }
+
+            logger.LogInformation(
+                "Microsoft Graph users fetched. (UserCount: {UserCount})",
+                users.Count);
+
+            return ServiceResponse<IReadOnlyCollection<User>>.Success(
+                users,
+                HttpStatusCode.OK);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            logger.LogInformation("Fetching Microsoft Graph users was cancelled.");
+
+            throw;
+        }
+        catch (ODataError err) // graph errors
+        {
+            var graphStatusCode = GraphStatusCodeMapper.Map(err.ResponseStatusCode);
+
+            logger.LogWarning(
+                err,
+                "Microsoft Graph rejected the users fetching request. " +
+                "(StatusCode: {StatusCode}, Message: {ErrorMessage})",
+                graphStatusCode,
+                err.Error?.Message ?? "Unknown Error");
+
+            return ServiceResponse<IReadOnlyCollection<User>>.Failure(
+                "Microsoft Graph rejected the users fetching request.",
+                graphStatusCode);
+        }
+        catch (HttpRequestException err)  // network errors
+        {
+            logger.LogError(
+                err,
+                "Network error occurred while fetching Microsoft Graph users.");
+
+            return ServiceResponse<IReadOnlyCollection<User>>.Failure(
+                "Network error occurred while fetching Microsoft Graph users.",
+                err.StatusCode is not null
+                    ? (int)err.StatusCode
+                    : StatusCodes.Status503ServiceUnavailable);
+        }
+        catch (ApiException err)  // graph sdk errors
+        {
+            logger.LogError(
+                err,
+                "Microsoft Graph SDK error occurred while fetching users. " +
+                "(StatusCode: {StatusCode})",
+                err.ResponseStatusCode);
+
+            return ServiceResponse<IReadOnlyCollection<User>>.Failure(
+                "Microsoft Graph SDK error occurred while fetching users.",
+                err.ResponseStatusCode);
+        }
+        catch (Exception err)
+        {
+            logger.LogError(
+                err,
+                "Unexpected error occurred while fetching Microsoft Graph users.");
+
+            return ServiceResponse<IReadOnlyCollection<User>>.Failure(
+                "Unexpected error occurred while fetching Microsoft Graph users.",
+                StatusCodes.Status500InternalServerError);
         }
     }
 

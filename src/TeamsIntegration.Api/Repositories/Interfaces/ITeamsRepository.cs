@@ -90,4 +90,13 @@ public interface ITeamsRepository
         string chatId,
         string message,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get all Teams users. <br/>
+    /// (EXCEPTION-SAFE)
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<ServiceResponse<IReadOnlyCollection<User>>> GetUsersAsync(
+        CancellationToken cancellationToken = default);
 }
