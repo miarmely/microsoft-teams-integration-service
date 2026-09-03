@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.Extensions.Options;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
@@ -640,6 +641,106 @@ public partial class TeamsRepository(
 
             return ServiceResponse<IReadOnlyCollection<User>>.Failure(
                 "Unexpected error occurred while fetching Microsoft Graph users.",
+                StatusCodes.Status500InternalServerError);
+        }
+    }
+
+    public async Task<ServiceResponse<User>> GetAccountAsync(
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var currentUser = await graphClient
+                .Me
+                .GetAsync(
+                    config =>
+                    {
+                        config.QueryParameters.Select =
+                        [
+                            "id",
+                            "displayName",
+                            "givenName",
+                            "surname",
+                            "preferredLanguage",
+                            "mail",
+                            "userPrincipalName",
+                            "mobilePhone",
+                            "businessPhones",
+                            "jobTitle",
+                            "department",
+                            "companyName",
+                            "employeeId",
+                            "officeLocation",
+                            "city",
+                            "country",
+                            "userType",
+                            "accountEnabled"
+                        ];
+                    },
+                    cancellationToken: cancellationToken);
+
+            if (string.IsNullOrWhiteSpace(currentUser?.Id))
+                return ServiceResponse<User>.Failure(
+                    "Authenticated Microsoft Graph user could not be resolved.",
+                    StatusCodes.Status401Unauthorized);
+
+            return ServiceResponse<User>.Success(
+                currentUser,
+                HttpStatusCode.OK);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            logger.LogInformation("Fetching Microsoft Graph user was cancelled.");
+
+            throw;
+        }
+        catch (ODataError err) // graph errors
+        {
+            var graphStatusCode = GraphStatusCodeMapper.Map(err.ResponseStatusCode);
+
+            logger.LogWarning(
+                err,
+                "Microsoft Graph rejected the user fetching request. " +
+                "(StatusCode: {StatusCode}, Message: {ErrorMessage})",
+                graphStatusCode,
+                err.Error?.Message ?? "Unknown Error");
+
+            return ServiceResponse<User>.Failure(
+                "Microsoft Graph rejected the user fetching request.",
+                graphStatusCode);
+        }
+        catch (HttpRequestException err)  // network errors
+        {
+            logger.LogError(
+                err,
+                "Network error occurred while fetching Microsoft Graph user.");
+
+            return ServiceResponse<User>.Failure(
+                "Network error occurred while fetching Microsoft Graph user.",
+                err.StatusCode != null ?
+                    (int)err.StatusCode
+                    : StatusCodes.Status503ServiceUnavailable);
+        }
+        catch (ApiException err)  // graph sdk errors
+        {
+            logger.LogError(
+                err,
+                "Microsoft Graph SDK error occurred while fetching user. " +
+                "(StatusCode: {StatusCode})",
+                err.ResponseStatusCode);
+
+            return ServiceResponse<User>.Failure(
+                "Microsoft Graph SDK error occurred while fetching user.",
+                err.ResponseStatusCode);
+        }
+        catch (Exception err)
+        {
+            logger.LogError(
+                err,
+                "Unexpected error occurred while fetching Microsoft Graph user.");
+
+            return ServiceResponse<User>.Failure(
+                "Unexpected error occurred while fetching Microsoft Graph user.",
                 StatusCodes.Status500InternalServerError);
         }
     }

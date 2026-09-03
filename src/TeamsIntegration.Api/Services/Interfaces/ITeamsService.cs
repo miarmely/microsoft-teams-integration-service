@@ -74,4 +74,13 @@ public interface ITeamsService
     /// <returns></returns>
     Task<ServiceResponse<UserResponse>> GetUsersAsync(
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get signed account. <br/>
+    /// (EXCEPTION-SAFE)
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<ServiceResponse<AccountResponse>> GetAccountAsync(
+        CancellationToken cancellationToken = default);
 }

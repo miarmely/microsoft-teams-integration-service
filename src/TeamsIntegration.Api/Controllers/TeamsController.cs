@@ -205,4 +205,16 @@ public class TeamsController(
 
         return StatusCode(res.StatusCode, res);
     }
+
+
+    [HttpGet("me")]
+    [HasPermission(TeamsIntegrationPermissions.ViewAccount)]
+    [ProducesResponseType(typeof(ServiceResponse<AccountResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAccountAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var res = await teamsService.GetAccountAsync(cancellationToken);
+
+        return StatusCode(res.StatusCode, res);
+    }
 }

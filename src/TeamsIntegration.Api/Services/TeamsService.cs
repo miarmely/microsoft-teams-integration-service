@@ -732,4 +732,51 @@ public sealed partial class TeamsService
             userRes,
             HttpStatusCode.OK);
     }
+
+    public async Task<ServiceResponse<AccountResponse>> GetAccountAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // get account infos
+        var res = await teamsRepo.GetAccountAsync(cancellationToken);
+
+        if (!res.IsSuccess
+            || res.Data == null)
+            return ServiceResponse<AccountResponse>.Failure(
+                res.ErrorMessage ?? "Microsoft Graph account could not be fetched.",
+                res.StatusCode);
+
+        // set response model
+        var user = res.Data;
+
+        var response = new AccountResponse
+        {
+            Id = user.Id!,
+
+            DisplayName = user.DisplayName,
+            GivenName = user.GivenName,
+            Surname = user.Surname,
+            PreferredLanguage = user.PreferredLanguage,
+
+            Mail = user.Mail,
+            UserPrincipalName = user.UserPrincipalName,
+            MobilePhone = user.MobilePhone,
+            BusinessPhones = user.BusinessPhones ?? [],
+
+            JobTitle = user.JobTitle,
+            Department = user.Department,
+            CompanyName = user.CompanyName,
+            EmployeeId = user.EmployeeId,
+
+            OfficeLocation = user.OfficeLocation,
+            City = user.City,
+            Country = user.Country,
+
+            UserType = user.UserType,
+            AccountEnabled = user.AccountEnabled
+        };
+
+        return ServiceResponse<AccountResponse>.Success(
+            response,
+            HttpStatusCode.OK);
+    }
 }
