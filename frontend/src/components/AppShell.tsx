@@ -11,6 +11,7 @@ import {
   PlugZap,
   Trash2,
   Users,
+  MessagesSquare,
   X,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -27,7 +28,8 @@ const nav = [
   { to: "/synchronize", label: "Synchronization", icon: RefreshCw },
   { to: "/export", label: "Export messages", icon: Archive },
   { to: "/messages/delete", label: "Delete messages", icon: Trash2 },
-  { to: "/send", label: "Send message", icon: Send },
+  { to: "/users/message", label: "Message people", icon: MessagesSquare },
+  { to: "/send", label: "Send channel card", icon: Send },
   { to: "/logs", label: "Application logs", icon: Activity },
 ];
 

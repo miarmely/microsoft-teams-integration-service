@@ -13,6 +13,7 @@ import { ConnectTeamsPage } from "./pages/ConnectTeamsPage";
 import { LogsPage } from "./pages/LogsPage";
 import { RequireTeamsConnection } from "./components/RequireTeamsConnection";
 import { TeamsConnectionProvider } from "./teamsConnection";
+import { UserMessagesPage } from "./pages/UserMessagesPage";
 
 /** Guards dashboard routes and renders them inside the authenticated shell. */
 function Protected() {
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/export" element={<ExportPage />} />
           <Route path="/messages/delete" element={<DeleteMessagesPage />} />
           <Route path="/send" element={<SendPage />} />
+          <Route path="/users/message" element={<UserMessagesPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/messages/live" replace />} />

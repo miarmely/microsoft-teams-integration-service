@@ -75,6 +75,26 @@ export interface GraphHostedContent {
   id?: string;
   contentType?: string;
 }
+export interface TeamsUser {
+  id: string;
+  displayName?: string;
+  givenName?: string;
+  surname?: string;
+  mail?: string;
+  userPrincipalName?: string;
+}
+export interface UserDirectoryResponse {
+  users: TeamsUser[];
+  totalUserCount: number;
+}
+export interface SendMultipleUserMessageResult {
+  targetCount: number;
+  failedEmails: string[];
+  deliveredMessages: GraphMessage[];
+  deliveredCount: number;
+  failedCount: number;
+  isAllDelivered: boolean;
+}
 export interface SyncResult {
   receivedMessageCount: number;
   insertedMessageCount: number;

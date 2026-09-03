@@ -11,6 +11,8 @@ import type {
   StoredMessage,
   SyncResult,
   Team,
+  UserDirectoryResponse,
+  SendMultipleUserMessageResult,
 } from "./types";
 
 /** Preserves structured API details when an operation fails or partly succeeds. */
@@ -283,4 +285,25 @@ export const api = {
     images.forEach((image) => form.append("images", image));
     return requestForm<GraphMessage>("/api/Teams/channels/message", form, token);
   },
+  /** Loads users that can receive a direct Teams message. */
+  users: (token: string) =>
+    request<UserDirectoryResponse>("/api/Teams/users", {}, token),
+  /** Sends a direct Teams message using the optimized single-recipient endpoint. */
+  sendUserMessage: (token: string, userEmail: string, message: string) =>
+    request<GraphMessage>(
+      "/api/Teams/users/message",
+      { method: "POST", body: JSON.stringify({ userEmail, message }) },
+      token,
+    ),
+  /** Sends the same direct Teams message to multiple recipients. */
+  sendMultipleUserMessage: (
+    token: string,
+    userEmails: string[],
+    message: string,
+  ) =>
+    request<SendMultipleUserMessageResult>(
+      "/api/Teams/users/message/multiple",
+      { method: "POST", body: JSON.stringify({ userEmails, message }) },
+      token,
+    ),
 };
