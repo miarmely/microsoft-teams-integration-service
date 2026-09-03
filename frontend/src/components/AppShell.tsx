@@ -13,6 +13,7 @@ import {
   Users,
   MessagesSquare,
   X,
+  ContactRound,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
@@ -22,6 +23,7 @@ import { Brand } from "./Brand";
 const nav = [
   { to: "/connect-teams", label: "Connect to Teams", icon: PlugZap },
   { to: "/teams", label: "Teams", icon: Users },
+  { to: "/users", label: "People directory", icon: ContactRound },
   { to: "/channels", label: "Channels", icon: Rows3 },
   { to: "/messages/live", label: "Live messages", icon: Radio },
   { to: "/messages/stored", label: "Synchronized", icon: Database },

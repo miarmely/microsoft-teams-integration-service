@@ -14,6 +14,7 @@ import { LogsPage } from "./pages/LogsPage";
 import { RequireTeamsConnection } from "./components/RequireTeamsConnection";
 import { TeamsConnectionProvider } from "./teamsConnection";
 import { UserMessagesPage } from "./pages/UserMessagesPage";
+import { UsersPage } from "./pages/UsersPage";
 
 /** Guards dashboard routes and renders them inside the authenticated shell. */
 function Protected() {
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/logs" element={<LogsPage />} />
         <Route element={<RequireTeamsConnection />}>
           <Route path="/teams" element={<TeamsPage />} />
+          <Route path="/users" element={<UsersPage />} />
           <Route path="/channels" element={<ChannelsPage />} />
           <Route path="/messages/live" element={<MessagesPage mode="live" />} />
           <Route path="/messages/stored" element={<MessagesPage mode="stored" />} />
