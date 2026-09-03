@@ -161,6 +161,7 @@ a {
   color: #9fbdd6;
 }
 .login-panel {
+  position: relative;
   display: grid;
   place-items: center;
   padding: 40px;
@@ -329,6 +330,7 @@ a {
   scrollbar-width: thin;
   scrollbar-color: #ffffff1f transparent;
 }
+.login-language { position: absolute; top: 28px; right: 32px; margin: 0; }
 .nav-group-trigger {
   width: 100%;
   display: flex;
@@ -430,8 +432,22 @@ a {
   font-size: 13px;
   color: #6a788c;
 }
-.environment {
+.language-switcher {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   margin-left: auto;
+  padding: 5px 8px;
+  border: 1px solid #d7e1ea;
+  border-radius: 9px;
+  color: #587087;
+  background: #f8fafc;
+}
+.language-switcher:focus-within { border-color: #8bb8da; box-shadow: 0 0 0 3px #176cb411; }
+.language-switcher svg { width: 15px; }
+.language-switcher select { padding: 1px 20px 1px 0; border: 0; outline: 0; color: #40566d; background: transparent; font-size: 11px; font-weight: 700; cursor: pointer; }
+.environment {
+  margin-left: 0;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1801,6 +1817,8 @@ a {
   .source-badge {
     display: none;
   }
+  .topbar-title { display: none; }
+  .language-switcher { margin-left: auto; }
   .results-toolbar {
     align-items: stretch;
     flex-direction: column;

@@ -18,11 +18,13 @@ import {
   MessageCircleMore,
   RefreshCcwDot,
   Settings2,
+  Languages,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../auth";
 import { Brand } from "./Brand";
+import { useI18n } from "../i18n";
 
 const navGroups = [
   {
@@ -59,6 +61,7 @@ const navGroups = [
 /** Provides authenticated pages with responsive navigation and sign-out. */
 export function AppShell({ children }: { children: ReactNode }) {
   const { signOut } = useAuth();
+  const { locale, setLocale } = useI18n();
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   const activeGroup = navGroups.find((group) =>
@@ -145,6 +148,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Menu />
           </button>
           <span className="topbar-title">Microsoft Teams operations</span>
+          <label className="language-switcher" aria-label="Language">
+            <Languages />
+            <select value={locale} onChange={(event) => setLocale(event.target.value as "en" | "tr")}>
+              <option value="en">English</option>
+              <option value="tr">Türkçe</option>
+            </select>
+          </label>
           <span className="environment">Production-ready</span>
         </header>
         {children}

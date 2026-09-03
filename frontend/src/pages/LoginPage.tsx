@@ -4,16 +4,19 @@ import {
   EyeOff,
   LockKeyhole,
   ShieldCheck,
+  Languages,
 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { Brand } from "../components/Brand";
+import { useI18n } from "../i18n";
 
 /** Authenticates a user through AccessHub and starts a persisted session. */
 export function LoginPage() {
   const { token, signIn } = useAuth();
+  const { locale, setLocale } = useI18n();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -65,6 +68,13 @@ export function LoginPage() {
         <small className="copyright">Enterprise Integration Platform</small>
       </section>
       <section className="login-panel">
+        <label className="language-switcher login-language" aria-label="Language">
+          <Languages />
+          <select value={locale} onChange={(event) => setLocale(event.target.value as "en" | "tr")}>
+            <option value="en">English</option>
+            <option value="tr">Türkçe</option>
+          </select>
+        </label>
         <form onSubmit={submit}>
           <div className="login-icon">
             <LockKeyhole />
